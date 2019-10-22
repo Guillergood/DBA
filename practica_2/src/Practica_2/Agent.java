@@ -6,6 +6,9 @@
 package Practica_2;
 
 import DBA.SuperAgent;
+import com.eclipsesource.json.Json;
+import com.eclipsesource.json.JsonArray;
+import com.eclipsesource.json.JsonObject;
 import com.sun.javafx.geom.Vec3d;
 import es.upv.dsic.gti_ia.core.AgentID;
 import java.util.ArrayList;
@@ -18,7 +21,7 @@ import javafx.util.Pair;
  */
 public class Agent extends SuperAgent {
     private Vec3d gps;
-    private int fuel;
+    private double fuel;
     private int[][] radar = new int[11][11];
     private int[][] magnetic = new int[11][11];
     private int[][] elevation = new int[11][11];
@@ -40,7 +43,7 @@ public class Agent extends SuperAgent {
         return gps;
     }
 
-    public int getFuel() {
+    public double getFuel() {
         return fuel;
     }
 
@@ -90,6 +93,36 @@ public class Agent extends SuperAgent {
 
     public HashMap<String, Boolean> getActiveSensors() {
         return activeSensors;
+    }
+    
+    void sensorsParser(String source){
+        JsonObject object = new JsonObject();
+        JsonArray radarTemp;
+        JsonArray elevationTemp;
+        JsonArray magneticTemp;
+        object = Json.parse(source).asObject();
+        gps.set(object.get("gps").asObject().get("x").asInt(),object.get("gps").asObject().get("y").asInt(),object.get("gps").asObject().get("z").asInt());
+
+        fuel = object.get("fuel").asDouble();
+
+        radarTemp = object.get("radar").asArray();
+        elevationTemp = object.get("elevation").asArray();
+        magneticTemp = object.get("magnetic").asArray();
+
+        int i = 0;
+        int j = 0;
+        for(int c=0; c<radarTemp.size();c++){
+            radar[j][i] = radarTemp.get(c).asInt();
+            elevation[j][i] = elevationTemp.get(c).asInt();
+            magnetic[j][i] = magneticTemp.get(c).asInt();
+
+            if(i == 11){
+                i=0;
+                j++;
+            }
+        }
+
+        gonio = new Pair(object.get("gonio").asObject().get("distance").asInt(),object.get("gonio").asObject().get("angle").asFloat());
     }
     
      
