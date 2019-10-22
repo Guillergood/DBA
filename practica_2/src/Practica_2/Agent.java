@@ -25,7 +25,7 @@ public class Agent extends SuperAgent {
     private int[][] radar = new int[11][11];
     private int[][] magnetic = new int[11][11];
     private int[][] elevation = new int[11][11];
-    private Pair<Integer,Float> gonio;
+    private Pair gonio;
     private static Object globalMap;
     private boolean status;
     private boolean goal;
