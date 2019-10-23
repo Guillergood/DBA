@@ -20,6 +20,7 @@ import javafx.util.Pair;
  * @author Guillermo
  */
 public class Agent extends SuperAgent {
+    // <editor-fold defaultstate="collapsed" desc="Vars">
     private Vec3d gps;
     private double fuel;
     private int[][] radar = new int[11][11];
@@ -27,18 +28,56 @@ public class Agent extends SuperAgent {
     private int[][] elevation = new int[11][11];
     private Pair gonio;
     private static Object globalMap;
-    private boolean status;
+    private Status status = Status.OFFLINE;
     private boolean goal;
     private ArrayList<Vec3d> trace;
     private int fuelWarning;
-    private String id;
+    private final String id;
     private String key;
     private HashMap<String, Boolean> activeSensors;
+    // </editor-fold>
+    // <editor-fold defaultstate="collapsed" desc="Enum">
+    private enum Status{
+        OFFLINE("offline"),
+        OPERATIVE("operative"),
+        CRASHED("crashed"),
+        ERROR("any error");
     
-    public Agent(AgentID aid) throws Exception {
-        super(aid);
-    }
+        Status(String name){
+            this.name = name;
+        }
+        private String name;
 
+        @Override
+        public String toString() {
+            return name;
+        }
+        
+    }
+    private enum Command{
+        MOVE_NW("moveNW"),
+        MOVE_N("moveN"),
+        MOVE_NE("moveNE"),
+        MOVE_SW("moveSW"),
+        MOVE_S("moveS"),
+        MOVE_SE("moveSE"),
+        MOVE_UP("moveUP"),
+        MOVE_DW("moveDW"),
+        REFUEL("refuel");        
+    
+        Command(String name){
+            this.name = name;
+        }
+        private String name;
+
+        @Override
+        public String toString() {
+            return name;
+        }
+        
+    }
+    // </editor-fold>
+    // <editor-fold defaultstate="collapsed" desc="Getters">
     public Vec3d getGps() {
         return gps;
     }
@@ -67,7 +106,7 @@ public class Agent extends SuperAgent {
         return globalMap;
     }
 
-    public boolean isStatus() {
+    public Status getStatus() {
         return status;
     }
 
@@ -87,15 +126,17 @@ public class Agent extends SuperAgent {
         return id;
     }
 
-    public String getKey() {
-        return key;
-    }
-
     public HashMap<String, Boolean> getActiveSensors() {
         return activeSensors;
     }
+    // </editor-fold>
     
-    void sensorsParser(String source){
+    public Agent(String id) throws Exception {
+        super(new AgentID(id));
+        this.id = id;
+    }
+    
+    private void sensorsParser(String source){
         JsonObject object = new JsonObject();
         JsonArray radarTemp;
         JsonArray elevationTemp;
@@ -124,6 +165,46 @@ public class Agent extends SuperAgent {
 
         gonio = new Pair(object.get("gonio").asObject().get("distance").asInt(),object.get("gonio").asObject().get("angle").asFloat());
     }
+
+    private boolean login(){
+        //TODO
+        throw new java.lang.UnsupportedOperationException("Not supported yet.");
+    }
     
-     
+    private boolean logout(){
+        //TODO
+        throw new java.lang.UnsupportedOperationException("Not supported yet.");
+    }
+    
+    private Command chooseMovement(){
+        //TODO
+        throw new java.lang.UnsupportedOperationException("Not supported yet.");
+    }
+    
+    private boolean checkStatus(){
+        switch (status) {
+            case OFFLINE:
+            case CRASHED:    
+                return false;
+            case OPERATIVE:
+                return true;
+            default:
+                throw new AssertionError();
+        }
+    }
+    
+    @Override
+    protected void execute() {
+        super.execute(); 
+        if(!login()) return;
+        while(checkStatus() && !goal)
+        {
+            //TODO: Get msg from controller
+            //TODO: Update sensors
+            Command act = chooseMovement();
+            //TODO: Act send msg to controller
+        }    
+        logout();
+    }    
+    
 }

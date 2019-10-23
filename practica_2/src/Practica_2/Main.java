@@ -5,17 +5,31 @@
  */
 package Practica_2;
 
+import es.upv.dsic.gti_ia.core.AgentsConnection;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  *
  * @author Guillermo
  */
 public class Main {
-
+    private final static String VHOST = "Practica2";
+    private final static String USER = "Backman";
+    private final static String PASSWORD = "BVgFPXaM";
+    
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        // TODO code application logic here
+        AgentsConnection.connect("isg2.ugr.es", 0, VHOST, USER, PASSWORD, false);
+        try {
+            Agent GB_agent = new Agent("GB_AGENT");
+            GB_agent.execute();
+        } catch (Exception ex) {
+            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
         
     }
     
