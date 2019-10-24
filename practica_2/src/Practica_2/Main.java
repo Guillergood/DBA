@@ -15,8 +15,8 @@ import java.util.logging.Logger;
  */
 public class Main {
     private final static String VHOST = "Practica2";
-    private final static String USER = "Backman";
-    private final static String PASSWORD = "BVgFPXaM";
+    public final static String USER = "Backman";
+    public final static String PASSWORD = "BVgFPXaM";
     
     /**
      * @param args the command line arguments

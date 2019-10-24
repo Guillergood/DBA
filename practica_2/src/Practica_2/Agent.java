@@ -9,10 +9,15 @@ import DBA.SuperAgent;
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.JsonValue;
 import com.sun.javafx.geom.Vec3d;
+import es.upv.dsic.gti_ia.core.ACLMessage;
 import es.upv.dsic.gti_ia.core.AgentID;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javafx.scene.image.Image;
 import javafx.util.Pair;
 
 /**
@@ -28,13 +33,22 @@ public class Agent extends SuperAgent {
     private int[][] elevation = new int[11][11];
     private Pair gonio;
     private static Object globalMap;
-    private Status status = Status.OFFLINE;
+    private boolean status; //TODO: check
     private boolean goal;
     private ArrayList<Vec3d> trace;
     private int fuelWarning;
     private final String id;
     private String key;
-    private HashMap<String, Boolean> activeSensors;
+    private HashMap<String, Boolean> activeSensors = new HashMap<String,Boolean>(){{
+        put("gps",false);  
+        put("fuel",false);  
+        put("radar",false);  
+        put("elevation",false);  
+        put("magnetic",false); 
+        put("gonio",false);  
+        //status and goal are always turned on
+    }};  
+    private final String map_name = "map10";
     // </editor-fold>
     // <editor-fold defaultstate="collapsed" desc="Enum">
     private enum Status{
@@ -106,7 +120,7 @@ public class Agent extends SuperAgent {
         return globalMap;
     }
 
-    public Status getStatus() {
+    public boolean getStatus() {
         return status;
     }
 
@@ -165,46 +179,132 @@ public class Agent extends SuperAgent {
 
         gonio = new Pair(object.get("gonio").asObject().get("distance").asInt(),object.get("gonio").asObject().get("angle").asFloat());
     }
-
+    
+    /**
+     * <p> Send a message to the controller. </p>     
+     * @author Bruno Garcia
+     */
+    private void sendMsg(String msg){
+        ACLMessage acl_msg = new ACLMessage();
+        acl_msg.setSender(this.getAid());
+        acl_msg.setReceiver(new AgentID("controlador"));
+        acl_msg.setContent(msg);
+        this.send(acl_msg);
+    }
+    
+    /**
+     * <p> Get a message from controller and return the content. </p>     
+     * @author Bruno Garcia
+     * @throws InterruptedException
+     * @return the content of message as String.
+     */
+    private String getMsg() throws InterruptedException{
+         ACLMessage acl_msg = new ACLMessage();
+         acl_msg = this.receiveACLMessage();
+         return acl_msg.getContent();
+    }
+    
+    /**
+     * <p> Send the first message to controller and return if the login was successful. </p>
+     * @author Bruno Garcia
+     * @return if login was successful
+     */
     private boolean login(){
-        //TODO
-        throw new java.lang.UnsupportedOperationException("Not supported yet.");
-    }
+        JsonObject jsonMsg = new JsonObject();
+        jsonMsg.add("command", "login");
+        jsonMsg.add("map", map_name);
+        activeSensors.forEach((String key,Boolean value) -> jsonMsg.add(key, value));
+        jsonMsg.add("user", Main.USER);
+        jsonMsg.add("password", Main.PASSWORD);
+        
+        sendMsg(jsonMsg.toString());
+        return checkStatus();
+    }   
     
-    private boolean logout(){
-        //TODO
-        throw new java.lang.UnsupportedOperationException("Not supported yet.");
-    }
-    
+    /**
+     * <p> Choose the next action to perform </p>
+     * TODO(is not implemented yet)
+     * @author 
+     * @return the action that Agent will perform
+     */
     private Command chooseMovement(){
         //TODO
         throw new java.lang.UnsupportedOperationException("Not supported yet.");
     }
     
+    /**
+     * <p> Send the action to perform to the controller. </p>
+     * @param command - the action to perform.
+     * @author Bruno Garcia
+     */
+    private void sendAction(Command command){
+        JsonObject jsonMsg = new JsonObject();
+        jsonMsg.add("command", command.toString());
+        jsonMsg.add("key", this.key);
+        sendMsg(jsonMsg.toString());
+    }
+    
+    /**
+     * <p> Send the last message to controller and return if the logout was successful. </p>
+     * TODO: get trace
+     * @author Bruno Garcia
+     * @return if logout was successful
+     */
+    private boolean logout(){
+        JsonObject jsonMsg = new JsonObject();
+        jsonMsg.add("command", "logout");
+        jsonMsg.add("key", this.key);
+        sendMsg(jsonMsg.toString());
+        
+        try {
+            String response = getMsg();
+            //TODO: get trace
+            return true;
+        } catch (InterruptedException ex) {
+            Logger.getLogger(Agent.class.getName()).log(Level.SEVERE, null, ex);
+        }         
+        return false;
+    }
+
+    /**
+     * <p> Check if last message was successful </p>     
+     * @author Bruno Garcia
+     * @return the status with controller
+     */
     private boolean checkStatus(){
-        switch (status) {
-            case OFFLINE:
-            case CRASHED:    
-                return false;
-            case OPERATIVE:
+       try {
+            String response = getMsg();
+            JsonObject responseJson = Json.parse(response).asObject();
+            JsonValue resultValue = responseJson.get("result");
+            JsonValue keyValue = responseJson.get("key");
+            
+            if(keyValue != null)            
+                this.key = keyValue.asString();            
+            
+            if (resultValue.asString().equals("ok"))
                 return true;
-            default:
-                throw new AssertionError();
-        }
+            else 
+            {
+                System.err.println("Error {\"result\": \""+resultValue.asString()+"\", \"in-reply-to\": \""+responseJson.get("in-reply-to").asString());
+                return false;
+            }                
+        } catch (InterruptedException ex) {
+            return false;
+        }   
     }
     
     @Override
     protected void execute() {
         super.execute(); 
         if(!login()) return;
-        while(checkStatus() && !goal)
+        do
         {
-            //TODO: Get msg from controller
+            //TODO: Get perception msg from controller
             //TODO: Update sensors
             Command act = chooseMovement();
-            //TODO: Act send msg to controller
-        }    
-        logout();
+            sendAction(act);
+        }while(checkStatus() && !goal);
+        logout();            
     }    
     
 }
