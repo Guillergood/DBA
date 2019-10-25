@@ -15,6 +15,7 @@ import es.upv.dsic.gti_ia.core.ACLMessage;
 import es.upv.dsic.gti_ia.core.AgentID;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.scene.image.Image;
@@ -40,15 +41,15 @@ public class Agent extends SuperAgent {
     private final String id;
     private String key;
     private HashMap<String, Boolean> activeSensors = new HashMap<String,Boolean>(){{
-        put("gps",false);  
-        put("fuel",false);  
-        put("radar",false);  
-        put("elevation",false);  
-        put("magnetic",false); 
-        put("gonio",false);  
+        put("gps",true);  
+        put("fuel",true);  
+        put("radar",true);  
+        put("elevation",true);  
+        put("magnetic",true); 
+        put("gonio",true);  
         //status and goal are always turned on
     }};  
-    private final String map_name = "map10";
+    private final String map_name = "playground";
     // </editor-fold>
     // <editor-fold defaultstate="collapsed" desc="Enum">
     private enum Status{
@@ -152,26 +153,46 @@ public class Agent extends SuperAgent {
         this.id = id;
     }
     
+    /**
+     * Decoding sensors information    
+     * @author Alberto Gurrea
+     */
+    
     private void sensorsParser(String source){
         JsonObject object = new JsonObject();
-        JsonArray radarTemp;
-        JsonArray elevationTemp;
-        JsonArray magneticTemp;
+        JsonArray radarTemp = null;
+        boolean radarBool = false;
+        JsonArray elevationTemp = null;
+        boolean elevationBool = false;
+        JsonArray magneticTemp = null;
+        boolean magneticBool = false;
         object = Json.parse(source).asObject();
-        gps.set(object.get("gps").asObject().get("x").asInt(),object.get("gps").asObject().get("y").asInt(),object.get("gps").asObject().get("z").asInt());
-
-        fuel = object.get("fuel").asDouble();
-
-        radarTemp = object.get("radar").asArray();
-        elevationTemp = object.get("elevation").asArray();
-        magneticTemp = object.get("magnetic").asArray();
-
+        if(object.get("gps") != null){
+            gps.set(object.get("gps").asObject().get("x").asInt(),object.get("gps").asObject().get("y").asInt(),object.get("gps").asObject().get("z").asInt());
+        }
+        
+        if(object.get("fuel") != null){
+            fuel = object.get("fuel").asDouble();
+        }
+        
+        if(object.get("radar") != null){
+            radarTemp = object.get("radar").asArray();
+            radarBool = true;
+        }
+        if(object.get("elevation") != null){
+            elevationTemp = object.get("elevation").asArray();
+            elevationBool=true;
+        }
+        if(object.get("magnetic") != null){
+            magneticTemp = object.get("magnetic").asArray();
+            magneticBool = true;
+        }
         int i = 0;
         int j = 0;
-        for(int c=0; c<radarTemp.size();c++){
-            radar[j][i] = radarTemp.get(c).asInt();
-            elevation[j][i] = elevationTemp.get(c).asInt();
-            magnetic[j][i] = magneticTemp.get(c).asInt();
+        for(int c=0; c<121;c++){
+            if(radarBool) radar[j][i] = radarTemp.get(c).asInt();
+            if(elevationBool)elevation[j][i] = elevationTemp.get(c).asInt();
+            if(magneticBool) magnetic[j][i] = magneticTemp.get(c).asInt();
 
             if(i == 11){
                 i=0;
@@ -179,7 +200,7 @@ public class Agent extends SuperAgent {
             }
         }
 
-        gonio = new Pair(object.get("gonio").asObject().get("distance").asInt(),object.get("gonio").asObject().get("angle").asFloat());
+        if(object.get("gonio") != null ) gonio = new Pair(object.get("gonio").asObject().get("distance").asInt(),object.get("gonio").asObject().get("angle").asFloat());
     }
     
     /**
@@ -303,8 +324,25 @@ public class Agent extends SuperAgent {
         {
             //TODO: Get perception msg from controller
             //TODO: Update sensors
-            Command act = chooseMovement();
-            sendAction(act);
+            /*Command act = chooseMovement();
+            sendAction(act);*/
+          
+            
+            // TESTING
+             Pair par;
+            try {
+               par = pathFinding();
+               if((Boolean)par.getKey()){
+                   ArrayList<Command> arrayList = (ArrayList<Command>)par.getValue();
+                   for (Command action : arrayList) {
+                       sendAction(action);
+                   }
+               }
+            } catch (Exception e) {
+                logout();
+            }
+            
+            
         }while(checkStatus() && !goal);
         logout();            
     }
@@ -322,6 +360,7 @@ public class Agent extends SuperAgent {
         final int MOVEMENTS_THRESHOLD = 3;
         
         if(gonio == null || (gonio.getKey() == null || gonio.getValue() == null) ){
+            logout();
             throw new Exception("ERROR GONIO NOT INIZIALIZED OR CONTAINS WRONG VALUES");
         }
         
