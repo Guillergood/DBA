@@ -25,7 +25,7 @@ import javafx.util.Pair;
  * @author Guillermo
  */
 public class Agent extends SuperAgent {
-    // <editor-fold defaultstate="collapsed" desc="Vars">
+    // <editor-fold defaultstate=Command.collapsed" desc="Vars">
     private Vec3d gps;
     private double fuel;
     private int[][] radar = new int[11][11];
@@ -69,12 +69,14 @@ public class Agent extends SuperAgent {
         
     }
     private enum Command{
-        MOVE_NW("moveNW"),
         MOVE_N("moveN"),
         MOVE_NE("moveNE"),
-        MOVE_SW("moveSW"),
-        MOVE_S("moveS"),
+        MOVE_E("moveE"),
         MOVE_SE("moveSE"),
+        MOVE_S("moveS"),
+        MOVE_SW("moveSW"),
+        MOVE_W("moveW"),
+        MOVE_NW("moveNW"),
         MOVE_UP("moveUP"),
         MOVE_DW("moveDW"),
         REFUEL("refuel");        
@@ -305,6 +307,83 @@ public class Agent extends SuperAgent {
             sendAction(act);
         }while(checkStatus() && !goal);
         logout();            
-    }    
+    }
+    
+    /**
+     * The agent plans a path to follow, it is determined by some heuristics, 
+     * @author Guillermo Bueno Vargas
+     * @throws Exception, when the movementCode is below 0 or above 8
+     * @throws Exception, when gonio has not been initialized or does not cointain correct values
+     * @return whether the path is possible or not and the movements
+     */
+    
+    Pair<Boolean, ArrayList> pathFinding() throws Exception {
+        
+        final int MOVEMENTS_THRESHOLD = 3;
+        
+        if(gonio == null || (gonio.getKey() == null || gonio.getValue() == null) ){
+            throw new Exception("ERROR GONIO NOT INIZIALIZED OR CONTAINS WRONG VALUES");
+        }
+        
+        int lastDistance = (int)gonio.getKey();
+        ArrayList<Command> movements = new ArrayList<>();
+        Boolean possiblePlan = false;
+        
+        while(lastDistance < MOVEMENTS_THRESHOLD){
+            int distance = (int)gonio.getKey();
+            float angle = (float)gonio.getValue();
+
+            // We have 8 movements, so the angle/45º will tell us where to move
+
+            int parts = 360/8; //45 degrees
+
+            int movementCode =(int) (angle/parts);
+
+            Command movement;
+
+            switch(movementCode){
+                case 0:
+                    movement = Command.MOVE_N;
+                    break;
+                case 1:
+                    movement = Command.MOVE_NE;
+                    break;
+                case 2:
+                    movement = Command.MOVE_E;
+                    break;
+                case 3:
+                    movement = Command.MOVE_SE;
+                     break;
+                case 4:
+                    movement = Command.MOVE_S;
+                    break;
+                case 5:
+                    movement = Command.MOVE_SW;
+                    break;
+                case 6:
+                    movement = Command.MOVE_W;
+                    break;
+                case 7:
+                    movement = Command.MOVE_NW;
+                    break;
+                default:
+                    throw new Exception("ERROR WHILE PLANNING WHERE TO GO");
+            }
+            
+            movements.add(movement);
+            lastDistance = distance;
+       
+        }
+        
+        
+        
+        if(movements.size() > 0){
+            possiblePlan = true;
+        }
+        
+        return new Pair<>(possiblePlan, movements);
+    }
+
+    
     
 }
