@@ -22,7 +22,7 @@ public class Main {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        AgentsConnection.connect("isg2.ugr.es", 0, VHOST, USER, PASSWORD, false);
+        AgentsConnection.connect("isg2.ugr.es", 6000, VHOST, USER, PASSWORD, false);
         try {
             Agent GB_agent = new Agent("GB_AGENT");
             GB_agent.execute();
