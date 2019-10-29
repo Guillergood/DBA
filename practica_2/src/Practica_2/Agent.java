@@ -210,7 +210,7 @@ public class Agent extends SuperAgent {
     private void sendMsg(String msg){
         ACLMessage acl_msg = new ACLMessage();
         acl_msg.setSender(this.getAid());
-        acl_msg.setReceiver(new AgentID("controlador"));
+        acl_msg.setReceiver(new AgentID("Bellatrix"));
         acl_msg.setContent(msg);
         this.send(acl_msg);
     }
@@ -239,6 +239,10 @@ public class Agent extends SuperAgent {
         activeSensors.forEach((String key,Boolean value) -> jsonMsg.add(key, value));
         jsonMsg.add("user", Main.USER);
         jsonMsg.add("password", Main.PASSWORD);
+        
+        System.out.println("\nJSONLOGIN: "+ jsonMsg.toString());
+        
+        
         
         sendMsg(jsonMsg.toString());
         return checkStatus();
@@ -295,9 +299,15 @@ public class Agent extends SuperAgent {
      * @return the status with controller
      */
     private boolean checkStatus(){
+        
        try {
             String response = getMsg();
+            if(response == null){
+                System.out.println("\nES NULO");
+            }
+            System.out.println("\nRESPONSE LOGIN: " + response);
             JsonObject responseJson = Json.parse(response).asObject();
+            System.out.println("\nRESPONSE JSON LOGIN: " + responseJson.toString());
             JsonValue resultValue = responseJson.get("result");
             JsonValue keyValue = responseJson.get("key");
             
@@ -318,18 +328,41 @@ public class Agent extends SuperAgent {
     
     @Override
     protected void execute() {
-        super.execute(); 
+        System.out.println("EJECUTA\n");
+        super.execute();
         if(!login()) return;
-        do
+        
+        
+        /*do
         {
+            
+            String elMensaje = null;
+            try {
+                elMensaje = getMsg();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(Agent.class.getName())
+                        .log(Level.SEVERE,"Error al coger el mensaje", ex);
+            }
+            
+            
+            
+            
+            if(elMensaje != null){
+                sensorsParser(elMensaje);
+                Logger.getLogger(Agent.class.getName())
+                        .log(Level.FINE,"Hay mensaje");
+            }
+
             //TODO: Get perception msg from controller
             //TODO: Update sensors
             /*Command act = chooseMovement();
             sendAction(act);*/
+            
+            
           
             
             // TESTING
-             Pair par;
+            /* Pair par;
             try {
                par = pathFinding();
                if((Boolean)par.getKey()){
@@ -340,11 +373,13 @@ public class Agent extends SuperAgent {
                }
             } catch (Exception e) {
                 logout();
-            }
+            }*/
             
-            
-        }while(checkStatus() && !goal);
-        logout();            
+          
+              
+        /*}while(checkStatus() && !goal);*/
+        System.out.println("LOGOUT\n");
+        logout();
     }
     
     /**
