@@ -13,6 +13,8 @@ import com.eclipsesource.json.JsonValue;
 import com.sun.javafx.geom.Vec3d;
 import es.upv.dsic.gti_ia.core.ACLMessage;
 import es.upv.dsic.gti_ia.core.AgentID;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -283,13 +285,50 @@ public class Agent extends SuperAgent {
         jsonMsg.add("key", this.key);
         sendMsg(jsonMsg.toString());
         
+        try{
+            ACLMessage newIn = this.receiveACLMessage();
+            JsonObject injson = Json.parse(newIn.getContent()).asObject();
+            
+            if(injson != null){
+                return traceProcess();
+            }
+            return false;
+            
+        } catch (InterruptedException ex){
+            System.err.println("Error");
+            return false;
+        }
+
+        
+        
+    }
+    
+    private boolean traceProcess(){
         try {
-            String response = getMsg();
-            //TODO: get trace
+            System.out.println("Recibiendo traza");
+            ACLMessage newIn = this.receiveACLMessage();
+            JsonObject injson = Json.parse(newIn.getContent()).asObject();
+            
+            
+            if(injson.get("result").asString().equals("ok")){
+                ACLMessage finalMsg = this.receiveACLMessage();
+                JsonObject finalJson = Json.parse(finalMsg.getContent()).asObject();
+                JsonArray ja = finalJson.get("trace").asArray();
+            
+            byte data[] = new byte [ja.size()];
+            for( int i= 0; i<data.length; i++){
+                data[i] = (byte) ja.get(i).asInt();
+            }
+            FileOutputStream fos = new FileOutputStream("mitraza.png");
+            fos.write(data);
+            fos.close();
+            }
+            System.out.println(injson);
+            System.out.println("Traza guardada");
             return true;
-        } catch (InterruptedException ex) {
+        } catch (InterruptedException | IOException ex) {
             Logger.getLogger(Agent.class.getName()).log(Level.SEVERE, null, ex);
-        }         
+        }     
         return false;
     }
 
