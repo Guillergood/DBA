@@ -153,6 +153,8 @@ public class Agent extends SuperAgent {
     public Agent(String id) throws Exception {
         super(new AgentID(id));
         this.id = id;
+        gps = new Vec3d();
+        trace = new ArrayList<>();
     }
     
     /**
@@ -161,33 +163,50 @@ public class Agent extends SuperAgent {
      */
     
     private void sensorsParser(String source){
-        JsonObject object = new JsonObject();
+        JsonObject object = null;
         JsonArray radarTemp = null;
         boolean radarBool = false;
         JsonArray elevationTemp = null;
         boolean elevationBool = false;
         JsonArray magneticTemp = null;
         boolean magneticBool = false;
-        object = Json.parse(source).asObject();
+        JsonObject perceptionObject;
+        perceptionObject = Json.parse(source).asObject();
+        object = perceptionObject.get("perceptions").asObject();
+        //object = Json.parse(source).asObject();
+        
+        System.out.println("\nperceptionObject: " + perceptionObject);
+        System.out.println("\nobject: " + object);
+        
         if(object.get("gps") != null){
+            System.out.println("\nGPS cogido");
             gps.set(object.get("gps").asObject().get("x").asInt(),object.get("gps").asObject().get("y").asInt(),object.get("gps").asObject().get("z").asInt());
+            System.out.println("\nGPS es: "+ gps.toString());
         }
         
         if(object.get("fuel") != null){
+            System.out.println("\nFUEL cogido");
             fuel = object.get("fuel").asDouble();
+            System.out.println("\nFUEL es: "+ fuel);
         }
         
         if(object.get("radar") != null){
+            System.out.println("\nRADAR cogido");
             radarTemp = object.get("radar").asArray();
             radarBool = true;
+            System.out.println("\nRADAR es: "+ radarTemp + " " + radarBool);
         }
         if(object.get("elevation") != null){
+            System.out.println("\nELEVATION cogido");
             elevationTemp = object.get("elevation").asArray();
             elevationBool=true;
+            System.out.println("\nELEVATION es: "+ elevationTemp + " " + elevationBool);
         }
         if(object.get("magnetic") != null){
+            System.out.println("\nMAGNETIC cogido");
             magneticTemp = object.get("magnetic").asArray();
             magneticBool = true;
+            System.out.println("\nMAGNETIC es: "+ magneticTemp + " " + magneticBool);
         }
         int i = 0;
         int j = 0;
@@ -201,8 +220,14 @@ public class Agent extends SuperAgent {
                 j++;
             }
         }
-
-        if(object.get("gonio") != null ) gonio = new Pair(object.get("gonio").asObject().get("distance").asInt(),object.get("gonio").asObject().get("angle").asFloat());
+        System.out.println("\nCogiendo GONIO");
+        if(object.get("gonio") != null ){
+            // Distancia es un double
+            gonio = new Pair(object.get("gonio").asObject().get("distance").asDouble(),object.get("gonio").asObject().get("angle").asFloat());
+        }
+        System.out.println("\nGONIO cogido");
+        System.out.println(gonio.toString());
+    
     }
     
     /**
@@ -315,13 +340,13 @@ public class Agent extends SuperAgent {
                 JsonObject finalJson = Json.parse(finalMsg.getContent()).asObject();
                 JsonArray ja = finalJson.get("trace").asArray();
             
-            byte data[] = new byte [ja.size()];
-            for( int i= 0; i<data.length; i++){
-                data[i] = (byte) ja.get(i).asInt();
-            }
-            FileOutputStream fos = new FileOutputStream("mitraza.png");
-            fos.write(data);
-            fos.close();
+                byte data[] = new byte [ja.size()];
+                for( int i= 0; i<data.length; i++){
+                    data[i] = (byte) ja.get(i).asInt();
+                }
+                FileOutputStream fos = new FileOutputStream("mitraza.png");
+                fos.write(data);
+                fos.close();
             }
             System.out.println(injson);
             System.out.println("Traza guardada");
@@ -344,7 +369,6 @@ public class Agent extends SuperAgent {
             if(response == null){
                 System.out.println("\nES NULO");
             }
-            System.out.println("\nRESPONSE LOGIN: " + response);
             JsonObject responseJson = Json.parse(response).asObject();
             System.out.println("\nRESPONSE JSON LOGIN: " + responseJson.toString());
             JsonValue resultValue = responseJson.get("result");
@@ -370,6 +394,47 @@ public class Agent extends SuperAgent {
         System.out.println("EJECUTA\n");
         super.execute();
         if(!login()) return;
+        
+        
+        
+        
+        
+        
+        Pair par;
+        try {
+            System.out.println("\nCogiendo percepcion");
+            String percepcion = getMsg();
+            if(percepcion != null && !percepcion.isEmpty()){
+                System.out.println("\nPercepcion: " + percepcion);
+                try {
+                    sensorsParser(percepcion);
+                } catch (Exception e) {
+                    System.out.println("Error: " + e);
+                }
+                
+                par = pathFinding();
+                System.out.println("\nEl par es: " + par.toString());
+                if((Boolean)par.getKey()){
+                    System.out.println("Funciona el pathfinding");
+                    ArrayList<Command> arrayList = (ArrayList<Command>)par.getValue();
+                    System.out.println("Mandamos acciones");
+                    for (Command action : arrayList) {
+                        sendAction(action);
+                    }
+                }
+            }
+            else{
+                if(percepcion== null){
+                    System.out.println("\nPERCEPCION ES NULL");
+                }
+                else{
+                    System.out.println("\nPERCEPCION ESTA VACIA");
+                }
+            }
+         } catch (Exception e) {
+             System.out.println("MAL"+ e);
+             e.printStackTrace();
+         }
         
         
         /*do
@@ -431,19 +496,24 @@ public class Agent extends SuperAgent {
     
     Pair<Boolean, ArrayList> pathFinding() throws Exception {
         
-        final int MOVEMENTS_THRESHOLD = 3;
+        final double MOVEMENTS_THRESHOLD = 3;
+        double lastDistance;
         
         if(gonio == null || (gonio.getKey() == null || gonio.getValue() == null) ){
-            logout();
-            throw new Exception("ERROR GONIO NOT INIZIALIZED OR CONTAINS WRONG VALUES");
+            System.out.println("\nMal el gonio");
+            lastDistance = 0;
+        }
+        else{
+            System.out.println("\nVALORES DE GONIO: " + gonio.toString());
+            lastDistance = (double)gonio.getKey();
         }
         
-        int lastDistance = (int)gonio.getKey();
+        
         ArrayList<Command> movements = new ArrayList<>();
         Boolean possiblePlan = false;
         
         while(lastDistance < MOVEMENTS_THRESHOLD){
-            int distance = (int)gonio.getKey();
+            double distance = (double)gonio.getKey();
             float angle = (float)gonio.getValue();
 
             // We have 8 movements, so the angle/45º will tell us where to move
