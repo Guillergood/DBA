@@ -6,6 +6,9 @@
 package Practica_2;
 
 import DBA.SuperAgent;
+import Practica_2.GUI.nodes.RadarNode;
+import Practica_2.interfaces.Observable;
+import Practica_2.interfaces.Observer;
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
@@ -15,17 +18,16 @@ import es.upv.dsic.gti_ia.core.ACLMessage;
 import es.upv.dsic.gti_ia.core.AgentID;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javafx.scene.image.Image;
 import javafx.util.Pair;
 
 /**
  *
  * @author Guillermo
  */
-public class Agent extends SuperAgent {
+public class Agent extends SuperAgent implements Observable{
     // <editor-fold defaultstate=Command.collapsed" desc="Vars">
     private Vec3d gps;
     private double fuel;
@@ -49,7 +51,7 @@ public class Agent extends SuperAgent {
         put("gonio",true);  
         //status and goal are always turned on
     }};  
-    private final String map_name = "playground";
+    private final String map_name = "playground";    
     // </editor-fold>
     // <editor-fold defaultstate="collapsed" desc="Enum">
     private enum Status{
@@ -147,10 +149,11 @@ public class Agent extends SuperAgent {
         return activeSensors;
     }
     // </editor-fold>
+    private List<Observer<Agent>> observers = new ArrayList();
     
     public Agent(String id) throws Exception {
         super(new AgentID(id));
-        this.id = id;
+        this.id = id;        
     }
     
     /**
@@ -319,6 +322,10 @@ public class Agent extends SuperAgent {
     @Override
     protected void execute() {
         super.execute(); 
+        boolean debug_mode = true;        
+        if(debug_mode)
+            return;
+        
         if(!login()) return;
         do
         {
@@ -344,7 +351,8 @@ public class Agent extends SuperAgent {
             
             
         }while(checkStatus() && !goal);
-        logout();            
+        logout();   
+        
     }
     
     /**
@@ -423,6 +431,21 @@ public class Agent extends SuperAgent {
         return new Pair<>(possiblePlan, movements);
     }
 
-    
-    
+    @Override
+    public void addOvserver(Observer o) {
+        observers.add(o);
+    }
+
+    @Override
+    public void notifyObservers() {
+        observers.forEach((observer)->{
+            if(observer instanceof RadarNode)
+            {
+                Pair<Vec3d,int[][]> data = new Pair(this.gps,this.radar);
+                observer.update(this, data);
+            }                
+            else
+                observer.update(this, "Who are you?");
+        });
+    }
 }
