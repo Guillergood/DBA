@@ -8,12 +8,14 @@
 
 .combo-box{
     -fx-background-color:  #232323;
-    -fx-background-radius: 6; 
+    -fx-background-radius: 6;     
  }
  
  /*Edit Normal Cell color */
  .combo-box .list-cell{ 
     -fx-background-color: #232323;
+    -fx-alignment: center;
+    -fx-text-fill: white;
 }
 
 /*Edit Cell Color Only when cursor hover cell */
@@ -25,7 +27,11 @@
 .combo-box .list-cell:selected{
     -fx-background-color: #232323; 
     -fx-background-radius: 6; 
-    -fx-padding: 0 7;
+    -fx-padding: 0 7 0 7;
+}
+
+.combo-box .arrow-button{
+    -fx-padding: 1 7 1 1;
 }
 
 /* -----------------------------------------------------------------------------
@@ -33,9 +39,17 @@
 * -----------------------------------------------------------------------------*/
 
 .button{    
-    -fx-padding: 5px;
-    -fx-border-insets: 5px;
-    -fx-background-insets: 5px;
+    -fx-padding: 5px;    
+}
+
+.menubtn{
+    -fx-background-color: #717171;
+}
+
+.menubtn:hover{
+    -fx-background-color: #818181;
+    -fx-border-color: #aaa;
+    -fx-border-radius: 5;
 }
 
 /* -----------------------------------------------------------------------------

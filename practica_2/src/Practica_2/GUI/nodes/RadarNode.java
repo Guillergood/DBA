@@ -26,13 +26,7 @@ public class RadarNode extends GridNode{
         Pair<Vec3d,int[][]> parsedData = (Pair<Vec3d,int[][]>) data;
         String gps_str = (parsedData.getKey()==null)?"offline":
                 "{"+parsedData.getKey().x+", "+parsedData.getKey().y+", "+parsedData.getKey().z+"}";
-        int[][] radar = parsedData.getValue();
-        
-        for (int i = 3; i < 9; i++) {
-            for (int j = 3; j < 9; j++) {
-                radar[i][j] = 100;
-            }
-        }
+        int[][] radar = parsedData.getValue();        
         
         for (int i = 0; i < 11; i++) {
             for (int j = 0; j < 11; j++) {

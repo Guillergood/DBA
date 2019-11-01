@@ -23,23 +23,13 @@ public class Main extends Application{
     static final int PREFERRED_HEIGHT = 482;
     private final static String VHOST = "Practica2";
     public final static String USER = "Backman";
-    public final static String PASSWORD = "BVgFPXaM";
-    private static Agent GB_agent = null;
+    public final static String PASSWORD = "BVgFPXaM";    
     
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) {
         AgentsConnection.connect("isg2.ugr.es", 6000, VHOST, USER, PASSWORD, false);
-        
-        try {
-            GB_agent = new Agent("GB_AGENT");            
-            //GB_agent.execute();
-        } catch (Exception ex) {
-            Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);
-            return;
-        }
-        
         launch(args);
     }
 
@@ -56,8 +46,6 @@ public class Main extends Application{
         stage.setMinHeight(PREFERRED_HEIGHT);
         stage.setScene(scene);
         stage.show();  
-    }
-    
-    public static Agent getAgent(){return Main.GB_agent;}
+    }   
     
 }

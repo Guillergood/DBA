@@ -6,6 +6,7 @@
 package Practica_2;
 
 import DBA.SuperAgent;
+import Practica_2.GUI.fxml.WindowController;
 import Practica_2.GUI.nodes.RadarNode;
 import Practica_2.interfaces.Observable;
 import Practica_2.interfaces.Observer;
@@ -19,8 +20,13 @@ import es.upv.dsic.gti_ia.core.AgentID;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.application.Platform;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.util.Pair;
 
 /**
@@ -51,25 +57,38 @@ public class Agent extends SuperAgent implements Observable{
         put("gonio",true);  
         //status and goal are always turned on
     }};  
-    private final String map_name = "playground";    
+    private final Maps map;    
     // </editor-fold>
     // <editor-fold defaultstate="collapsed" desc="Enum">
-    private enum Status{
-        OFFLINE("offline"),
-        OPERATIVE("operative"),
-        CRASHED("crashed"),
-        ERROR("any error");
+    public static enum Maps{
+        PLAYGROUND("Playgound","paygound"),
+        CASE_STUDY("Case Study","case_study"),
+        MAP1("Map 1","map1"),
+        MAP2("Map 2","map2"),
+        MAP3("Map 3","map3"),
+        MAP4("Map 4","map4"),
+        MAP5("Map 5","map5"),
+        MAP6("Map 6","map6"),
+        MAP7("Map 7","map7"),
+        MAP8("Map 8","map8"),
+        MAP9("Map 9","map9"),
+        MAP10("Map 10","map10");
     
-        Status(String name){
+        Maps(String name,String json_input){
             this.name = name;
+            this.json_value = json_input;
         }
         private String name;
+        private String json_value;
 
         @Override
         public String toString() {
             return name;
         }
         
+        public String toJsonValue(){
+            return json_value;            
+        }        
     }
     private enum Command{
         MOVE_N("moveN"),
@@ -148,12 +167,27 @@ public class Agent extends SuperAgent implements Observable{
     public HashMap<String, Boolean> getActiveSensors() {
         return activeSensors;
     }
+
+    public Maps getMap() {
+        return map;
+    }   
+    
     // </editor-fold>
     private List<Observer<Agent>> observers = new ArrayList();
+    public final ObjectProperty<WindowController.Status> statusProperty = new SimpleObjectProperty<>();
+    private java.util.concurrent.Semaphore lock = new java.util.concurrent.Semaphore(0);
+    private java.util.concurrent.Semaphore gui_lock = new java.util.concurrent.Semaphore(0);
     
-    public Agent(String id) throws Exception {
+    public Agent(String id, Maps map) throws Exception {
         super(new AgentID(id));
-        this.id = id;        
+        this.id = id;      
+        this.map = map;  
+        statusProperty.addListener((obs,oldValue,newValue)->{
+            if(newValue.equals(WindowController.Status.RUNNING))
+                lock.release();
+            else if(newValue.equals(WindowController.Status.STOP))
+                lock.release();
+        });        
     }
     
     /**
@@ -238,7 +272,7 @@ public class Agent extends SuperAgent implements Observable{
     private boolean login(){
         JsonObject jsonMsg = new JsonObject();
         jsonMsg.add("command", "login");
-        jsonMsg.add("map", map_name);
+        jsonMsg.add("map", map.toJsonValue());
         activeSensors.forEach((String key,Boolean value) -> jsonMsg.add(key, value));
         jsonMsg.add("user", Main.USER);
         jsonMsg.add("password", Main.PASSWORD);
@@ -320,39 +354,34 @@ public class Agent extends SuperAgent implements Observable{
     }
     
     @Override
-    protected void execute() {
+    public void execute() {
         super.execute(); 
-        boolean debug_mode = true;        
-        if(debug_mode)
-            return;
-        
-        if(!login()) return;
-        do
-        {
-            //TODO: Get perception msg from controller
-            //TODO: Update sensors
-            /*Command act = chooseMovement();
-            sendAction(act);*/
-          
-            
-            // TESTING
-             Pair par;
+        System.out.println();
+       
+        while(!statusProperty.get().equals(WindowController.Status.STOP)){
+            System.out.println(this.statusProperty.get());
             try {
-               par = pathFinding();
-               if((Boolean)par.getKey()){
-                   ArrayList<Command> arrayList = (ArrayList<Command>)par.getValue();
-                   for (Command action : arrayList) {
-                       sendAction(action);
-                   }
-               }
-            } catch (Exception e) {
-                logout();
+                if(statusProperty.get().equals(WindowController.Status.PAUSE))
+                    lock.acquire();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(Agent.class.getName()).log(Level.SEVERE, null, ex);
             }
             
-            
-        }while(checkStatus() && !goal);
-        logout();   
-        
+            this.notifyObservers();
+        }            
+                
+        System.out.println("Logout");
+                /*
+                if(!login()) return;
+                do
+                {
+                //TODO: Get perception msg from controller
+                //TODO: Update sensors
+                Command act = chooseMovement();
+                sendAction(act);
+                }while(checkStatus() && !goal);
+                logout();
+            */  
     }
     
     /**
@@ -438,14 +467,38 @@ public class Agent extends SuperAgent implements Observable{
 
     @Override
     public void notifyObservers() {
-        observers.forEach((observer)->{
-            if(observer instanceof RadarNode)
-            {
-                Pair<Vec3d,int[][]> data = new Pair(this.gps,this.radar);
-                observer.update(this, data);
-            }                
-            else
-                observer.update(this, "Who are you?");
+        Platform.runLater(()->{
+            observers.forEach((observer)->{
+                if(observer instanceof RadarNode)
+                {
+                    Pair<Vec3d,int[][]> data = new Pair(this.gps,this.radar);
+                    observer.update(this, data);
+                }                
+                else
+                    observer.update(this, "Who are you?");
+            });            
+        });    
+        
+        
+        Thread t = new Thread(()->{try {
+            Thread.sleep(50);
+            gui_lock.release();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(Agent.class.getName()).log(Level.SEVERE, null, ex);
+            }
         });
+        t.setDaemon(true);
+        t.start();
+        try {
+            gui_lock.acquire();
+        } catch (InterruptedException ex) {
+            Logger.getLogger(Agent.class.getName()).log(Level.SEVERE, null, ex);
+        }        
     }
+    
+    public void nextStep(){
+        if(statusProperty.get().equals(WindowController.Status.PAUSE))
+            lock.release();
+    }
+    
 }
