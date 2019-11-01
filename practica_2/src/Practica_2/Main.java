@@ -24,7 +24,7 @@ public class Main {
     public static void main(String[] args) {
         AgentsConnection.connect("isg2.ugr.es", 6000, VHOST, USER, PASSWORD, false);
         try {
-            Agent GB_agent = new Agent("GB_AGENT");
+            Agent GB_agent = new Agent("GB_AGENT5");
             GB_agent.execute();
         } catch (Exception ex) {
             Logger.getLogger(Main.class.getName()).log(Level.SEVERE, null, ex);

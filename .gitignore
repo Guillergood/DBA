@@ -1,1 +1,5 @@
-/practica_2/nbproject/private/
+/practica_2/nbproject/*
+/practica_2/build/
+/practica_2/dist/
+*.xml
+*.png

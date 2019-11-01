@@ -277,13 +277,53 @@ public class Agent extends SuperAgent {
     
     /**
      * <p> Choose the next action to perform </p>
-     * TODO(is not implemented yet)
-     * @author 
+     * Currently moves based on the angle of gonio.
+     * For test purposes only,
+     * @author Juan Ocaña
      * @return the action that Agent will perform
      */
-    private Command chooseMovement(){
-        //TODO
-        throw new java.lang.UnsupportedOperationException("Not supported yet.");
+    private Command chooseMovement() throws Exception {
+        double distance = (double)gonio.getKey();
+        float angle = (float)gonio.getValue();
+
+        // We have 8 movements, so the angle/45º will tell us where to move
+
+        int parts = 360/8; //45 degrees
+
+        int movementCode =(int) (angle/parts);
+
+        Command movement;
+
+        switch(movementCode){
+            case 0:
+                movement = Command.MOVE_N;
+                break;
+            case 1:
+                movement = Command.MOVE_NE;
+                break;
+            case 2:
+                movement = Command.MOVE_E;
+                break;
+            case 3:
+                movement = Command.MOVE_SE;
+                 break;
+            case 4:
+                movement = Command.MOVE_S;
+                break;
+            case 5:
+                movement = Command.MOVE_SW;
+                break;
+            case 6:
+                movement = Command.MOVE_W;
+                break;
+            case 7:
+                movement = Command.MOVE_NW;
+                break;
+            default:
+                throw new Exception("ERROR WHILE PLANNING WHERE TO GO");
+        }
+        
+        return movement;
     }
     
     /**
@@ -395,178 +435,48 @@ public class Agent extends SuperAgent {
         super.execute();
         if(!login()) return;
         
-        
-        
-        
-        
-        
-        Pair par;
-        try {
-            System.out.println("\nCogiendo percepcion");
-            String percepcion = getMsg();
-            if(percepcion != null && !percepcion.isEmpty()){
-                System.out.println("\nPercepcion: " + percepcion);
-                try {
-                    sensorsParser(percepcion);
-                } catch (Exception e) {
-                    System.out.println("Error: " + e);
-                }
-                
-                par = pathFinding();
-                System.out.println("\nEl par es: " + par.toString());
-                if((Boolean)par.getKey()){
-                    System.out.println("Funciona el pathfinding");
-                    ArrayList<Command> arrayList = (ArrayList<Command>)par.getValue();
-                    System.out.println("Mandamos acciones");
-                    for (Command action : arrayList) {
-                        sendAction(action);
+        do {
+            try {
+                System.out.println("\nCogiendo percepcion");
+                String percepcion = getMsg();
+                if(percepcion != null && !percepcion.isEmpty()){
+                    System.out.println("\nPercepcion: " + percepcion);
+                    try {
+                        sensorsParser(percepcion);
+                    } catch (Exception e) {
+                        break;
+                    }                
+                    
+                    // Choose movement
+                    Command move = chooseMovement();
+                    System.out.println("\nLa acción es: " + move.toString());
+
+                    // Send movement:
+                    sendAction(move);
+                    
+                    // Receive results:
+                    if(!checkStatus()) {
+                        logout();
+                        return;
                     }
-                }
-            }
-            else{
-                if(percepcion== null){
-                    System.out.println("\nPERCEPCION ES NULL");
+                    
                 }
                 else{
-                    System.out.println("\nPERCEPCION ESTA VACIA");
+                    if(percepcion== null){
+                        System.out.println("\nPERCEPCION ES NULL");
+                    }
+                    else{
+                        System.out.println("\nPERCEPCION ESTA VACIA");
+                    }
                 }
-            }
-         } catch (Exception e) {
-             System.out.println("MAL"+ e);
-             e.printStackTrace();
-         }
-        
-        
-        /*do
-        {
-            
-            String elMensaje = null;
-            try {
-                elMensaje = getMsg();
-            } catch (InterruptedException ex) {
-                Logger.getLogger(Agent.class.getName())
-                        .log(Level.SEVERE,"Error al coger el mensaje", ex);
-            }
-            
-            
-            
-            
-            if(elMensaje != null){
-                sensorsParser(elMensaje);
-                Logger.getLogger(Agent.class.getName())
-                        .log(Level.FINE,"Hay mensaje");
-            }
+             } catch (Exception e) {
+                 System.out.println("MAL"+ e);
+                 e.printStackTrace();
+             }
+        } while ((double)gonio.getKey() != 0.0);
 
-            //TODO: Get perception msg from controller
-            //TODO: Update sensors
-            /*Command act = chooseMovement();
-            sendAction(act);*/
-            
-            
-          
-            
-            // TESTING
-            /* Pair par;
-            try {
-               par = pathFinding();
-               if((Boolean)par.getKey()){
-                   ArrayList<Command> arrayList = (ArrayList<Command>)par.getValue();
-                   for (Command action : arrayList) {
-                       sendAction(action);
-                   }
-               }
-            } catch (Exception e) {
-                logout();
-            }*/
-            
-          
-              
-        /*}while(checkStatus() && !goal);*/
+        // Reached goal
         System.out.println("LOGOUT\n");
         logout();
-    }
-    
-    /**
-     * The agent plans a path to follow, it is determined by some heuristics, 
-     * @author Guillermo Bueno Vargas
-     * @throws Exception, when the movementCode is below 0 or above 8
-     * @throws Exception, when gonio has not been initialized or does not cointain correct values
-     * @return whether the path is possible or not and the movements
-     */
-    
-    Pair<Boolean, ArrayList> pathFinding() throws Exception {
-        
-        final double MOVEMENTS_THRESHOLD = 3;
-        double lastDistance;
-        
-        if(gonio == null || (gonio.getKey() == null || gonio.getValue() == null) ){
-            System.out.println("\nMal el gonio");
-            lastDistance = 0;
-        }
-        else{
-            System.out.println("\nVALORES DE GONIO: " + gonio.toString());
-            lastDistance = (double)gonio.getKey();
-        }
-        
-        
-        ArrayList<Command> movements = new ArrayList<>();
-        Boolean possiblePlan = false;
-        
-        while(lastDistance < MOVEMENTS_THRESHOLD){
-            double distance = (double)gonio.getKey();
-            float angle = (float)gonio.getValue();
-
-            // We have 8 movements, so the angle/45º will tell us where to move
-
-            int parts = 360/8; //45 degrees
-
-            int movementCode =(int) (angle/parts);
-
-            Command movement;
-
-            switch(movementCode){
-                case 0:
-                    movement = Command.MOVE_N;
-                    break;
-                case 1:
-                    movement = Command.MOVE_NE;
-                    break;
-                case 2:
-                    movement = Command.MOVE_E;
-                    break;
-                case 3:
-                    movement = Command.MOVE_SE;
-                     break;
-                case 4:
-                    movement = Command.MOVE_S;
-                    break;
-                case 5:
-                    movement = Command.MOVE_SW;
-                    break;
-                case 6:
-                    movement = Command.MOVE_W;
-                    break;
-                case 7:
-                    movement = Command.MOVE_NW;
-                    break;
-                default:
-                    throw new Exception("ERROR WHILE PLANNING WHERE TO GO");
-            }
-            
-            movements.add(movement);
-            lastDistance = distance;
-       
-        }
-        
-        
-        
-        if(movements.size() > 0){
-            possiblePlan = true;
-        }
-        
-        return new Pair<>(possiblePlan, movements);
-    }
-
-    
-    
+    }  
 }
