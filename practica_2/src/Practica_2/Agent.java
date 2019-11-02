@@ -17,6 +17,8 @@ import com.eclipsesource.json.JsonValue;
 import com.sun.javafx.geom.Vec3d;
 import es.upv.dsic.gti_ia.core.ACLMessage;
 import es.upv.dsic.gti_ia.core.AgentID;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -40,7 +42,7 @@ public class Agent extends SuperAgent implements Observable{
     private int[][] radar = new int[11][11];
     private int[][] magnetic = new int[11][11];
     private int[][] elevation = new int[11][11];
-    private Pair<Integer,Float> gonio;
+    private Pair<Float,Float> gonio;
     private static Object globalMap;
     private boolean status; //TODO: check
     private boolean goal;
@@ -61,7 +63,7 @@ public class Agent extends SuperAgent implements Observable{
     // </editor-fold>
     // <editor-fold defaultstate="collapsed" desc="Enum">
     public static enum Maps{
-        PLAYGROUND("Playgound","paygound"),
+        PLAYGROUND("Playground","playground"),
         CASE_STUDY("Case Study","case_study"),
         MAP1("Map 1","map1"),
         MAP2("Map 2","map2"),
@@ -136,7 +138,7 @@ public class Agent extends SuperAgent implements Observable{
         return elevation;
     }
 
-    public Pair<Integer, Float> getGonio() {
+    public Pair<Float, Float> getGonio() {
         return gonio;
     }
 
@@ -172,10 +174,6 @@ public class Agent extends SuperAgent implements Observable{
         return map;
     }   
     
-    public boolean getGoal(){
-        return this.goal || (gonio.getKey() != 0);
-    }
-    
     // </editor-fold>
     private List<Observer<Agent>> observers = new ArrayList();
     public final ObjectProperty<WindowController.Status> statusProperty = new SimpleObjectProperty<>();
@@ -184,7 +182,9 @@ public class Agent extends SuperAgent implements Observable{
     
     public Agent(String id, Maps map) throws Exception {
         super(new AgentID(id));
-        this.id = id;      
+        this.id = id;
+        gps = new Vec3d();
+        trace = new ArrayList<>();
         this.map = map;  
         statusProperty.addListener((obs,oldValue,newValue)->{
             if(newValue.equals(WindowController.Status.RUNNING))
@@ -199,34 +199,55 @@ public class Agent extends SuperAgent implements Observable{
      * @author Alberto Gurrea
      */
     
-    private void sensorsParser(String source){
-        JsonObject object = new JsonObject();
+    /**
+     * <p> Send the first message to controller and return if the login was successful. </p>
+     * @author Bruno Garcia
+     * @author Alberto Gurrea
+     */
+    private void sensorsParser(String source){        
         JsonArray radarTemp = null;
         boolean radarBool = false;
         JsonArray elevationTemp = null;
         boolean elevationBool = false;
         JsonArray magneticTemp = null;
         boolean magneticBool = false;
-        object = Json.parse(source).asObject();
+        JsonObject perceptionObject;
+        perceptionObject = Json.parse(source).asObject();
+        JsonObject object = perceptionObject.get("perceptions").asObject();
+        //object = Json.parse(source).asObject();
+        
+        System.out.println("\nperceptionObject: " + perceptionObject);
+        System.out.println("\nobject: " + object);
+        
         if(object.get("gps") != null){
+            System.out.println("\nGPS cogido");
             gps.set(object.get("gps").asObject().get("x").asInt(),object.get("gps").asObject().get("y").asInt(),object.get("gps").asObject().get("z").asInt());
+            System.out.println("\nGPS es: "+ gps.toString());
         }
         
         if(object.get("fuel") != null){
+            System.out.println("\nFUEL cogido");
             fuel = object.get("fuel").asDouble();
+            System.out.println("\nFUEL es: "+ fuel);
         }
         
         if(object.get("radar") != null){
+            System.out.println("\nRADAR cogido");
             radarTemp = object.get("radar").asArray();
             radarBool = true;
+            System.out.println("\nRADAR es: "+ radarTemp + " " + radarBool);
         }
         if(object.get("elevation") != null){
+            System.out.println("\nELEVATION cogido");
             elevationTemp = object.get("elevation").asArray();
             elevationBool=true;
+            System.out.println("\nELEVATION es: "+ elevationTemp + " " + elevationBool);
         }
         if(object.get("magnetic") != null){
+            System.out.println("\nMAGNETIC cogido");
             magneticTemp = object.get("magnetic").asArray();
             magneticBool = true;
+            System.out.println("\nMAGNETIC es: "+ magneticTemp + " " + magneticBool);
         }
         if(object.get("goal") != null){
             goal = object.get("goal").asBoolean();
@@ -234,19 +255,17 @@ public class Agent extends SuperAgent implements Observable{
         int i = 0;
         int j = 0;
         for(int c=0; c<121;c++){
-            if(radarBool) radar[j][i] = radarTemp.get(c).asInt();
-            if(elevationBool)elevation[j][i] = elevationTemp.get(c).asInt();
-            if(magneticBool) magnetic[j][i] = magneticTemp.get(c).asInt();
-
-            if(i == 11){
-                i=0;
-                j++;
-            }
+            i = c%11;
+            j = c/11;
+            
+            if(radarBool) radar[i][j] = radarTemp.get(c).asInt();            
+            if(elevationBool) elevation[i][j] = elevationTemp.get(c).asInt();
+            if(magneticBool) magnetic[i][j] = magneticTemp.get(c).asInt();
         }
         
         if(object.get("gonio") != null ){
             JsonObject gonioObject = object.get("gonio").asObject();
-            Integer key = gonioObject.get("distance").asInt();
+            Float key = gonioObject.get("distance").asFloat();
             Float value = gonioObject.get("angle").asFloat();
             gonio = new Pair(key,value);
         } 
@@ -259,7 +278,7 @@ public class Agent extends SuperAgent implements Observable{
     private void sendMsg(String msg){
         ACLMessage acl_msg = new ACLMessage();
         acl_msg.setSender(this.getAid());
-        acl_msg.setReceiver(new AgentID("controlador"));
+        acl_msg.setReceiver(new AgentID("Bellatrix"));
         acl_msg.setContent(msg);
         this.send(acl_msg);
     }
@@ -288,7 +307,7 @@ public class Agent extends SuperAgent implements Observable{
         activeSensors.forEach((String key,Boolean value) -> jsonMsg.add(key, value));
         jsonMsg.add("user", Main.USER);
         jsonMsg.add("password", Main.PASSWORD);
-        
+        System.out.println(jsonMsg.toString());
         sendMsg(jsonMsg.toString());
         return checkStatus();
     }   
@@ -311,13 +330,53 @@ public class Agent extends SuperAgent implements Observable{
     
     /**
      * <p> Choose the next action to perform </p>
-     * TODO(is not implemented yet)
-     * @author 
+     * Currently moves based on the angle of gonio.
+     * For test purposes only,
+     * @author Juan Ocaña
      * @return the action that Agent will perform
      */
-    private Command chooseMovement(){
-        //TODO
-        throw new java.lang.UnsupportedOperationException("Not supported yet.");
+    private Command chooseMovement() throws Exception {
+        double distance = (double)gonio.getKey();
+        float angle = (float)gonio.getValue();
+
+        // We have 8 movements, so the angle/45º will tell us where to move
+
+        int parts = 360/8; //45 degrees
+
+        int movementCode =(int) (angle/parts);
+
+        Command movement;
+
+        switch(movementCode){
+            case 0:
+                movement = Command.MOVE_N;
+                break;
+            case 1:
+                movement = Command.MOVE_NE;
+                break;
+            case 2:
+                movement = Command.MOVE_E;
+                break;
+            case 3:
+                movement = Command.MOVE_SE;
+                 break;
+            case 4:
+                movement = Command.MOVE_S;
+                break;
+            case 5:
+                movement = Command.MOVE_SW;
+                break;
+            case 6:
+                movement = Command.MOVE_W;
+                break;
+            case 7:
+                movement = Command.MOVE_NW;
+                break;
+            default:
+                throw new Exception("ERROR WHILE PLANNING WHERE TO GO");
+        }
+        
+        return movement;
     }
     
     /**
@@ -344,13 +403,50 @@ public class Agent extends SuperAgent implements Observable{
         jsonMsg.add("key", this.key);
         sendMsg(jsonMsg.toString());
         
+        try{
+            ACLMessage newIn = this.receiveACLMessage();
+            JsonObject injson = Json.parse(newIn.getContent()).asObject();
+            
+            if(injson != null){
+                return traceProcess();
+            }
+            return false;
+            
+        } catch (InterruptedException ex){
+            System.err.println("Error");
+            return false;
+        }
+
+        
+        
+    }
+    
+    private boolean traceProcess(){
         try {
-            String response = getMsg();
-            //TODO: get trace
+            System.out.println("Recibiendo traza");
+            ACLMessage newIn = this.receiveACLMessage();
+            JsonObject injson = Json.parse(newIn.getContent()).asObject();
+            
+            
+            if(injson.get("result").asString().equals("ok")){
+                ACLMessage finalMsg = this.receiveACLMessage();
+                JsonObject finalJson = Json.parse(finalMsg.getContent()).asObject();
+                JsonArray ja = finalJson.get("trace").asArray();
+            
+                byte data[] = new byte [ja.size()];
+                for( int i= 0; i<data.length; i++){
+                    data[i] = (byte) ja.get(i).asInt();
+                }
+                FileOutputStream fos = new FileOutputStream("mitraza.png");
+                fos.write(data);
+                fos.close();
+            }
+            System.out.println(injson);
+            System.out.println("Traza guardada");
             return true;
-        } catch (InterruptedException ex) {
+        } catch (InterruptedException | IOException ex) {
             Logger.getLogger(Agent.class.getName()).log(Level.SEVERE, null, ex);
-        }         
+        }     
         return false;
     }
 
@@ -360,9 +456,14 @@ public class Agent extends SuperAgent implements Observable{
      * @return the status with controller
      */
     private boolean checkStatus(){
+        
        try {
             String response = getMsg();
+            if(response == null){
+                return false;
+            }
             JsonObject responseJson = Json.parse(response).asObject();
+            //System.out.println("\nRESPONSE JSON LOGIN: " + responseJson.toString());
             JsonValue resultValue = responseJson.get("result");
             JsonValue keyValue = responseJson.get("key");
             
@@ -376,7 +477,7 @@ public class Agent extends SuperAgent implements Observable{
             }                
             else 
             {
-                System.err.println("Error {\"result\": \""+resultValue.asString()+"\", \"in-reply-to\": \""+responseJson.get("in-reply-to").asString());
+                System.err.println("Error "+response);
                 return false;
             }                
         } catch (InterruptedException ex) {
@@ -400,99 +501,26 @@ public class Agent extends SuperAgent implements Observable{
             try {
                 if(statusProperty.get().equals(WindowController.Status.PAUSE))
                     lock.acquire();
+                
+                Command act = chooseMovement();
+                System.out.println("> MOVE \""+act+"\"");
+                sendAction(act);
             } catch (InterruptedException ex) {
                 Logger.getLogger(Agent.class.getName()).log(Level.SEVERE, null, ex);
-            }
+            } catch (Exception ex) {
+                break; 
+            }           
             
-            Command act = chooseMovement();
-            System.out.println("> MOVE \""+act+"\"");
-            sendAction(act);
-        }while(checkStatus() && !getGoal() && !statusProperty.get().equals(WindowController.Status.STOP));        
+        }while(checkStatus() && !isGoal() && !statusProperty.get().equals(WindowController.Status.STOP));        
         System.out.println("> LOGOUT");
-        logout();             
+        logout();     
+        Platform.runLater(()->statusProperty.set(WindowController.Status.STOP));
     }
-    
-    /**
-     * The agent plans a path to follow, it is determined by some heuristics, 
-     * @author Guillermo Bueno Vargas
-     * @throws Exception, when the movementCode is below 0 or above 8
-     * @throws Exception, when gonio has not been initialized or does not cointain correct values
-     * @return whether the path is possible or not and the movements
-     */
-    
-    Pair<Boolean, ArrayList> pathFinding() throws Exception {
-        
-        final int MOVEMENTS_THRESHOLD = 3;
-        
-        if(gonio == null || (gonio.getKey() == null || gonio.getValue() == null) ){
-            logout();
-            throw new Exception("ERROR GONIO NOT INIZIALIZED OR CONTAINS WRONG VALUES");
-        }
-        
-        int lastDistance = (int)gonio.getKey();
-        ArrayList<Command> movements = new ArrayList<>();
-        Boolean possiblePlan = false;
-        
-        while(lastDistance < MOVEMENTS_THRESHOLD){
-            int distance = gonio.getKey();
-            float angle = gonio.getValue();
-
-            // We have 8 movements, so the angle/45º will tell us where to move
-
-            int parts = 360/8; //45 degrees
-
-            int movementCode =(int) (angle/parts);
-
-            Command movement;
-
-            switch(movementCode){
-                case 0:
-                    movement = Command.MOVE_N;
-                    break;
-                case 1:
-                    movement = Command.MOVE_NE;
-                    break;
-                case 2:
-                    movement = Command.MOVE_E;
-                    break;
-                case 3:
-                    movement = Command.MOVE_SE;
-                     break;
-                case 4:
-                    movement = Command.MOVE_S;
-                    break;
-                case 5:
-                    movement = Command.MOVE_SW;
-                    break;
-                case 6:
-                    movement = Command.MOVE_W;
-                    break;
-                case 7:
-                    movement = Command.MOVE_NW;
-                    break;
-                default:
-                    throw new Exception("ERROR WHILE PLANNING WHERE TO GO");
-            }
-            
-            movements.add(movement);
-            lastDistance = distance;
-       
-        }
-        
-        
-        
-        if(movements.size() > 0){
-            possiblePlan = true;
-        }
-        
-        return new Pair<>(possiblePlan, movements);
-    }
-
+   
     @Override
     public void addOvserver(Observer o) {
         observers.add(o);
     }
-
     @Override
     public void notifyObservers() {
         Platform.runLater(()->{
@@ -506,7 +534,8 @@ public class Agent extends SuperAgent implements Observable{
                     observer.update(this, "Who are you?");
             });            
         });    
-        
+        if(statusProperty.get().equals(WindowController.Status.PAUSE))
+            return;
         
         Thread t = new Thread(()->{try {
             Thread.sleep(50);

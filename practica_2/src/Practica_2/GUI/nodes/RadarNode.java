@@ -36,7 +36,7 @@ public class RadarNode extends GridNode{
                     String str_tp = String.format("Agent GPS: %s\nMap Height: %d",gps_str,value);
                     if(parsedData.getKey()!=null)
                     {
-                        double agentHeight = parsedData.getKey().y;
+                        double agentHeight = parsedData.getKey().z;
                         int height_gap = (int) (agentHeight-value);
                         str_tp = str_tp.concat("\nHeight gap: "+height_gap);
                     }                        
