@@ -300,6 +300,7 @@ public class Agent extends SuperAgent {
         
         else {
             // We have 8 movements, so the angle/45º will tell us where to move
+            float distance = (float)gonio.getKey();
             float angle = (float)gonio.getValue();
             
             int parts = 360/8; //45 degrees
@@ -332,16 +333,8 @@ public class Agent extends SuperAgent {
                 break;
             default:
                 throw new Exception("ERROR WHILE PLANNING WHERE TO GO");
-            }  
-            
-            // Prueba evaluación:
-            int val = evaluate((int)gps.x, (int)gps.y);
-            
+            }           
         }
-        
-
-        
-
         
         return move;
     }
@@ -355,18 +348,29 @@ public class Agent extends SuperAgent {
      */
     private int evaluate(int x, int y) {
         
+        // Relative position to check in sensors
+        int relX = 5 + (int)gps.x - x;
+        int relY = 5 + (int)gps.y - y;
+        
         int value = 0;
+        
+        // If cell upper than max, don't pick
+        if(radar[relX][relY] >= max) {
+            // Set value to +infinite
+            value = Integer.MAX_VALUE;
+        }
+        else {
+            // Gonio current distance
+            value += Math.round((float)gonio.getKey());
 
-        // Gonio current distance
-        value += Math.round((float)gonio.getKey());
-        
-        // Effort to reach it based on elevation
-        value += (elevation[5 + (int)gps.x - x][5 + (int)gps.y - y]);
-        
-        // Footprint:
-        value += footprints[x][y];
-        
-        System.out.println("Evaluación " + x + ", " + y + ": " + value);
+            // Effort to reach it based on elevation
+            value += elevation[relX][relY];
+
+            System.out.println("Evaluación " + x + ", " + y + ": " + value);
+
+            // Footprints
+            value += footprints[x][y];
+        }
         
         return value;
     }
