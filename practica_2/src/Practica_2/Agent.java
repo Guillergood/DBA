@@ -36,12 +36,22 @@ public class Agent extends SuperAgent {
     private int[][] elevation = new int[11][11];
     private Pair gonio;
     private static Object globalMap;
-    private boolean status; //TODO: check
+    private boolean status;
     private boolean goal;
     private ArrayList<Vec3d> trace;
     private int fuelWarning;
     private final String id;
     private String key;
+    
+    // Map dimensions
+    private int dimx;
+    private int dimy;
+    private int min;
+    private int max;
+    
+    // Footprints
+    private int[][] footprints;
+    
     private HashMap<String, Boolean> activeSensors = new HashMap<String,Boolean>(){{
         put("gps",true);  
         put("fuel",true);  
@@ -50,8 +60,9 @@ public class Agent extends SuperAgent {
         put("magnetic",true); 
         put("gonio",true);  
         //status and goal are always turned on
-    }};  
+    }}; 
     private final String map_name = "playground";
+
     // </editor-fold>
     // <editor-fold defaultstate="collapsed" desc="Enum">
     private enum Status{
@@ -163,7 +174,6 @@ public class Agent extends SuperAgent {
      */
     
     private void sensorsParser(String source){
-        JsonObject object = null;
         JsonArray radarTemp = null;
         boolean radarBool = false;
         JsonArray elevationTemp = null;
@@ -172,7 +182,7 @@ public class Agent extends SuperAgent {
         boolean magneticBool = false;
         JsonObject perceptionObject;
         perceptionObject = Json.parse(source).asObject();
-        object = perceptionObject.get("perceptions").asObject();
+        JsonObject object = perceptionObject.get("perceptions").asObject();
         //object = Json.parse(source).asObject();
         
         System.out.println("\nperceptionObject: " + perceptionObject);
@@ -208,26 +218,26 @@ public class Agent extends SuperAgent {
             magneticBool = true;
             System.out.println("\nMAGNETIC es: "+ magneticTemp + " " + magneticBool);
         }
+        if(object.get("goal") != null){
+            goal = object.get("goal").asBoolean();
+        }
         int i = 0;
         int j = 0;
         for(int c=0; c<121;c++){
-            if(radarBool) radar[j][i] = radarTemp.get(c).asInt();
-            if(elevationBool)elevation[j][i] = elevationTemp.get(c).asInt();
-            if(magneticBool) magnetic[j][i] = magneticTemp.get(c).asInt();
-
-            if(i == 11){
-                i=0;
-                j++;
-            }
+            i = c%11;
+            j = c/11;
+            
+            if(radarBool) radar[i][j] = radarTemp.get(c).asInt();            
+            if(elevationBool) elevation[i][j] = elevationTemp.get(c).asInt();
+            if(magneticBool) magnetic[i][j] = magneticTemp.get(c).asInt();
         }
-        System.out.println("\nCogiendo GONIO");
+        
         if(object.get("gonio") != null ){
-            // Distancia es un double
-            gonio = new Pair(object.get("gonio").asObject().get("distance").asDouble(),object.get("gonio").asObject().get("angle").asFloat());
-        }
-        System.out.println("\nGONIO cogido");
-        System.out.println(gonio.toString());
-    
+            JsonObject gonioObject = object.get("gonio").asObject();
+            Float key = gonioObject.get("distance").asFloat();
+            Float value = gonioObject.get("angle").asFloat();
+            gonio = new Pair(key,value);
+        } 
     }
     
     /**
@@ -269,8 +279,6 @@ public class Agent extends SuperAgent {
         
         System.out.println("\nJSONLOGIN: "+ jsonMsg.toString());
         
-        
-        
         sendMsg(jsonMsg.toString());
         return checkStatus();
     }   
@@ -283,47 +291,84 @@ public class Agent extends SuperAgent {
      * @return the action that Agent will perform
      */
     private Command chooseMovement() throws Exception {
-        double distance = (double)gonio.getKey();
-        float angle = (float)gonio.getValue();
+        Command move;
+        
+        // If above goal, descend:
+        if(magnetic[5][5] == 1 && !goal) {
+            move = Command.MOVE_DW;
+        }
+        
+        else {
+            // We have 8 movements, so the angle/45º will tell us where to move
+            float angle = (float)gonio.getValue();
+            
+            int parts = 360/8; //45 degrees
+            int movementCode =(int) (angle/parts);
 
-        // We have 8 movements, so the angle/45º will tell us where to move
-
-        int parts = 360/8; //45 degrees
-
-        int movementCode =(int) (angle/parts);
-
-        Command movement;
-
-        switch(movementCode){
+            switch(movementCode){
             case 0:
-                movement = Command.MOVE_N;
+                move = Command.MOVE_N;
                 break;
             case 1:
-                movement = Command.MOVE_NE;
+                move = Command.MOVE_NE;
                 break;
             case 2:
-                movement = Command.MOVE_E;
+                move = Command.MOVE_E;
                 break;
             case 3:
-                movement = Command.MOVE_SE;
+                move = Command.MOVE_SE;
                  break;
             case 4:
-                movement = Command.MOVE_S;
+                move = Command.MOVE_S;
                 break;
             case 5:
-                movement = Command.MOVE_SW;
+                move = Command.MOVE_SW;
                 break;
             case 6:
-                movement = Command.MOVE_W;
+                move = Command.MOVE_W;
                 break;
             case 7:
-                movement = Command.MOVE_NW;
+                move = Command.MOVE_NW;
                 break;
             default:
                 throw new Exception("ERROR WHILE PLANNING WHERE TO GO");
+            }  
+            
+            // Prueba evaluación:
+            int val = evaluate((int)gps.x, (int)gps.y);
+            
         }
         
-        return movement;
+
+        
+
+        
+        return move;
+    }
+    
+    /**
+     * <p>Evaluates a cell based on Gonio distance and relative cost to
+     * reach it</p>
+     * @param x X coordinate of the cell
+     * @param y Y coordinate of the cell
+     * @return value of that cell
+     */
+    private int evaluate(int x, int y) {
+        
+        int value = 0;
+
+        // Gonio current distance
+        value += Math.round((float)gonio.getKey());
+        
+        // Effort to reach it based on elevation
+        value += (elevation[5 + (int)gps.x - x][5 + (int)gps.y - y]);
+        
+        // Footprint:
+        value += footprints[x][y];
+        
+        System.out.println("Evaluación " + x + ", " + y + ": " + value);
+        
+        return value;
     }
     
     /**
@@ -414,6 +459,24 @@ public class Agent extends SuperAgent {
             JsonValue resultValue = responseJson.get("result");
             JsonValue keyValue = responseJson.get("key");
             
+            // If response to login, save world dimensions and set footprints map
+            // NOTA: seguramente lo saque de aquí
+            if("login".equals(responseJson.get("in-reply-to").asString())) {
+                System.out.println("LOGIN: guardando datos del mundo");
+                dimx = responseJson.get("dimx").asInt();
+                dimy = responseJson.get("dimy").asInt();
+                min = responseJson.get("min").asInt();
+                max = responseJson.get("max").asInt();
+                
+                footprints = new int[dimx][dimy];
+                
+                for(int i = 0; i < dimx; ++i) {
+                    for(int j = 0; j < dimy; ++j) {
+                        footprints[i][j] = 0;
+                    }
+                }
+            }
+            
             if(keyValue != null)            
                 this.key = keyValue.asString();            
             
@@ -435,7 +498,7 @@ public class Agent extends SuperAgent {
         super.execute();
         if(!login()) return;
         
-        do {
+        while (!goal) {
             try {
                 System.out.println("\nCogiendo percepcion");
                 String percepcion = getMsg();
@@ -446,6 +509,9 @@ public class Agent extends SuperAgent {
                     } catch (Exception e) {
                         break;
                     }                
+                    
+                    // Register footprint
+                    ++footprints[(int)gps.x][(int)gps.y];
                     
                     // Choose movement
                     Command move = chooseMovement();
@@ -473,7 +539,7 @@ public class Agent extends SuperAgent {
                  System.out.println("MAL"+ e);
                  e.printStackTrace();
              }
-        } while ((double)gonio.getKey() != 0.0);
+        }
 
         // Reached goal
         System.out.println("LOGOUT\n");
