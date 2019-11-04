@@ -24,6 +24,8 @@ public class Main extends Application{
     private final static String VHOST = "Practica2";
     public final static String USER = "Backman";
     public final static String PASSWORD = "BVgFPXaM";    
+    private static int runTimes = 0;
+    private static int zombieCount = 0;
     
     /**
      * @param args the command line arguments
@@ -46,6 +48,20 @@ public class Main extends Application{
         stage.setMinHeight(PREFERRED_HEIGHT);
         stage.setScene(scene);
         stage.show();  
+        
     }   
+    
+    public static Agent getAgent(Agent.Maps map){
+        String aid = String.format("GB_AGENT_run_%s", runTimes++);
+        if(zombieCount>0)
+            aid = aid.concat("_z"+zombieCount);
+        try { 
+            return new Agent(aid,map);
+        } catch (Exception ex) {
+            System.err.println(String.format("Agent with aid: \"%s\" already exist. Zombie Count increased, trying again.", aid));
+            zombieCount++;
+            return getAgent(map);
+        }
+    }
     
 }

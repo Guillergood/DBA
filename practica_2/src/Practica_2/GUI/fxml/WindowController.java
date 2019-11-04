@@ -118,8 +118,8 @@ public class WindowController implements Initializable {
                     cb_map.disableProperty().set(false);
                     toolBox.getChildren().addAll(btnPlay,btnDebug);
                     step = ()->{System.err.println("Unexpected STEP");}; 
-                    container.getChildren().clear();
-                    container.getChildren().add(offlineNode);  
+                    //container.getChildren().clear();
+                    //container.getChildren().add(offlineNode);  
                     break;
                 case RUNNING:
                     btnForward.disableProperty().set(true);
@@ -173,9 +173,8 @@ public class WindowController implements Initializable {
     }    
 
     private void createAgent(){          
-        try {
-            String aid = String.format("GB_AGENT_run_%s", runTimes++);
-            Agent gb_agent = new Agent(aid,cb_map.getValue());  
+        try {            
+            Agent gb_agent = Main.getAgent(cb_map.getValue());
             gb_agent.statusProperty.bindBidirectional(statusProperty);  
             gb_agent.addOvserver(radarNode);
             step = () -> {gb_agent.nextStep();};

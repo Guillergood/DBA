@@ -523,7 +523,26 @@ public class Agent extends SuperAgent implements Observable{
     }
     @Override
     public void notifyObservers() {
-        Platform.runLater(()->{
+        java.util.concurrent.Semaphore aux_s = new java.util.concurrent.Semaphore(0);
+        long start_time = System.currentTimeMillis();        
+        
+        Thread t = new Thread(()->{
+            try {
+                aux_s.acquire();
+                long end_time = System.currentTimeMillis();
+                long difference = end_time-start_time;
+                System.out.println("Redraw time(ms): "+difference);
+                if(difference<25)
+                    Thread.sleep(25-difference);
+                gui_lock.release();
+            } catch (InterruptedException ex) {
+                Logger.getLogger(Agent.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        });
+        t.setDaemon(true);
+        t.start();
+        
+        Platform.runLater(()->{            
             observers.forEach((observer)->{
                 if(observer instanceof RadarNode)
                 {
@@ -531,26 +550,20 @@ public class Agent extends SuperAgent implements Observable{
                     observer.update(this, data);
                 }                
                 else
-                    observer.update(this, "Who are you?");
-            });            
+                    observer.update(this, "Who are you?");    
+            });
+            
+            aux_s.release();
         });    
         if(statusProperty.get().equals(WindowController.Status.PAUSE))
             return;
         
-        Thread t = new Thread(()->{try {
-            Thread.sleep(50);
-            gui_lock.release();
-            } catch (InterruptedException ex) {
-                Logger.getLogger(Agent.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        });
-        t.setDaemon(true);
-        t.start();
+        
         try {
             gui_lock.acquire();
         } catch (InterruptedException ex) {
             Logger.getLogger(Agent.class.getName()).log(Level.SEVERE, null, ex);
-        }        
+        } 
     }
     
     public void nextStep(){
