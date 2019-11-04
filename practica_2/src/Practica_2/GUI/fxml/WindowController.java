@@ -6,6 +6,7 @@
 package Practica_2.GUI.fxml;
 
 import Practica_2.Agent;
+import Practica_2.GUI.nodes.MapNode;
 import Practica_2.GUI.nodes.RadarNode;
 import Practica_2.Main;
 import java.net.URL;
@@ -20,9 +21,12 @@ import javafx.collections.FXCollections;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.geometry.Orientation;
+import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.SplitPane;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
@@ -65,26 +69,29 @@ public class WindowController implements Initializable {
     private FlowPane offlineNode;
 
     @FXML
-    private void onPlayClick(ActionEvent event) { 
+    private void onPlayClick(ActionEvent event) {         
         boolean flag = statusProperty.get().equals(Status.STOP); 
-        statusProperty.set(Status.RUNNING);
+        agentIsProcesingProperty.set(true);
+        statusProperty.set(Status.RUNNING);        
         if(flag)
            createAgent();        
     }
 
     @FXML
-    private void onPauseClick(ActionEvent event) {
+    private void onPauseClick(ActionEvent event) {        
         statusProperty.set(Status.PAUSE);
     }
 
     @FXML
     private void onForwardClick(ActionEvent event) {
+        agentIsProcesingProperty.set(true);
         statusProperty.set(Status.PAUSE);
         step.run();
     }
 
     @FXML
     private void onDebugClick(ActionEvent event) {
+        agentIsProcesingProperty.set(true);
         statusProperty.set(Status.PAUSE);
         createAgent();        
     }
@@ -100,10 +107,11 @@ public class WindowController implements Initializable {
         PAUSE
     }
     public final ObjectProperty<Status> statusProperty = new SimpleObjectProperty<>();        
+    public final ObjectProperty<Boolean> agentIsProcesingProperty = new SimpleObjectProperty<>();
     Runnable step = ()->{System.err.println("Unexpected STEP");};
-    private static int runTimes = 0;
     
     RadarNode radarNode = new RadarNode();
+    MapNode mapNode = new MapNode(10);
     
     /**
      * Initializes the controller class.
@@ -125,24 +133,32 @@ public class WindowController implements Initializable {
                     btnForward.disableProperty().set(true);
                     cb_map.disableProperty().set(true);
                     toolBox.getChildren().addAll(btnPause,btnForward,btnStop);
-                    if(oldValue.equals(Status.STOP)){
-                        container.getChildren().clear();
-                        container.getChildren().add(radarNode);  
-                    }
+                    if(oldValue.equals(Status.STOP))
+                        addContent();
                 break;
                 case PAUSE:
                     cb_map.disableProperty().set(true);
                     btnForward.disableProperty().set(false);
                     toolBox.getChildren().addAll(btnPlay,btnForward,btnStop); 
-                    if(oldValue.equals(Status.STOP)){
-                        container.getChildren().clear();
-                        container.getChildren().add(radarNode);  
-                    }
+                    if(oldValue.equals(Status.STOP))
+                        addContent();
                 break;
                 default:
                     throw new AssertionError();
             }
             
+        });
+        
+        agentIsProcesingProperty.addListener((obs,oldValue,newValue)->{
+            if(newValue)
+            {
+                toolBox.disableProperty().set(true);
+                toolBox.setCursor(Cursor.WAIT);
+            }
+            else{
+                toolBox.disableProperty().set(false);
+                toolBox.setCursor(Cursor.DEFAULT);
+            }
         });
         statusProperty.set(Status.STOP);        
                 
@@ -172,11 +188,29 @@ public class WindowController implements Initializable {
               
     }    
 
+    private void addContent(){
+        container.getChildren().clear();
+        
+        SplitPane pane = new SplitPane(mapNode,radarNode);
+        pane.orientationProperty().set(Orientation.HORIZONTAL);
+        pane.getStyleClass().add("split-pane-h");
+        
+        AnchorPane.setTopAnchor(pane, 0d);
+        AnchorPane.setBottomAnchor(pane, 0d);
+        AnchorPane.setLeftAnchor(pane, 0d);
+        AnchorPane.setRightAnchor(pane, 0d);        
+        
+        container.getChildren().add(pane);
+        //container.getChildren().add(radarNode);  
+    }
+    
     private void createAgent(){          
         try {            
             Agent gb_agent = Main.getAgent(cb_map.getValue());
             gb_agent.statusProperty.bindBidirectional(statusProperty);  
+            gb_agent.agentIsProcesingProperty.bindBidirectional(agentIsProcesingProperty);
             gb_agent.addOvserver(radarNode);
+            gb_agent.addOvserver(mapNode);
             step = () -> {gb_agent.nextStep();};
             Thread t = new Thread(() -> {gb_agent.execute();});
             t.setDaemon(true);

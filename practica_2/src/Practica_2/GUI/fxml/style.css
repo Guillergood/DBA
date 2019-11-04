@@ -84,3 +84,27 @@
     -fx-background-color: white;
     -fx-background-radius: 5em;
 }
+
+/* -----------------------------------------------------------------------------
+*   Split Pane
+* -----------------------------------------------------------------------------*/
+
+.split-pane{
+    -fx-background-color:  #232323;
+    -fx-padding: 0;
+}
+
+.split-pane > *{
+    -fx-padding: 5;
+}
+
+#split-pane-h > .split-pane-divider {
+    -fx-background-color: linear-gradient(to bottom, transparent, rgb(68,69,71), transparent);
+    -fx-padding: 1;
+}
+
+#split-pane-v > .split-pane-divider {
+    -fx-background-color: linear-gradient(to right, transparent, rgb(68,69,71), transparent);
+    -fx-padding: 1;    
+}
+
