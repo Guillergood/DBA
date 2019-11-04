@@ -44,12 +44,20 @@ public class Agent extends SuperAgent implements Observable{
     private int[][] elevation = new int[11][11];
     private Pair<Float,Float> gonio;
     private static Object globalMap;
-    private boolean status; //TODO: check
+    private boolean status;
     private boolean goal;
     private ArrayList<Vec3d> trace;
     private int fuelWarning;
     private final String id;
     private String key;
+    // World dimensions
+    private int min;
+    private int max;
+    private int dimx;
+    private int dimy;
+    // Footprint map
+    private int footprints[][];
+    // Active sensors
     private HashMap<String, Boolean> activeSensors = new HashMap<String,Boolean>(){{
         put("gps",true);  
         put("fuel",true);  
@@ -336,7 +344,6 @@ public class Agent extends SuperAgent implements Observable{
      * @return the action that Agent will perform
      */
     private Command chooseMovement() throws Exception {
-        double distance = (double)gonio.getKey();
         float angle = (float)gonio.getValue();
 
         // We have 8 movements, so the angle/45º will tell us where to move
@@ -416,9 +423,6 @@ public class Agent extends SuperAgent implements Observable{
             System.err.println("Error");
             return false;
         }
-
-        
-        
     }
     
     private boolean traceProcess(){
@@ -468,7 +472,26 @@ public class Agent extends SuperAgent implements Observable{
             JsonValue keyValue = responseJson.get("key");
             
             if(keyValue != null)            
-                this.key = keyValue.asString();            
+                this.key = keyValue.asString();
+            
+            // If response to login, save world dimensions and set footprints map
+            if("login".equals(responseJson.get("in-reply-to").asString())) {
+                dimx = responseJson.get("dimx").asInt();
+                dimy = responseJson.get("dimy").asInt();
+                min = responseJson.get("min").asInt();
+                max = responseJson.get("max").asInt();
+                
+                // Footprints map initialized to 0
+                footprints = new int[dimx][dimy];
+                
+                for(int i = 0; i < dimx; ++i) {
+                    for(int j = 0; j < dimy; ++j) {
+                        footprints[i][j] = 0;
+                    }
+                }
+                
+                System.out.println("WORLD");
+            }
             
             if (resultValue.asString().equals("ok"))
             {
@@ -502,6 +525,10 @@ public class Agent extends SuperAgent implements Observable{
                 if(statusProperty.get().equals(WindowController.Status.PAUSE))
                     lock.acquire();
                 
+                // Register footprint
+                ++footprints[(int)gps.x][(int)gps.y];
+                
+                // Choose next movement
                 Command act = chooseMovement();
                 System.out.println("> MOVE \""+act+"\"");
                 sendAction(act);

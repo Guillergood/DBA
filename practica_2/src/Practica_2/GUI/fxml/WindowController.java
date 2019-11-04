@@ -101,7 +101,7 @@ public class WindowController implements Initializable {
     }
     public final ObjectProperty<Status> statusProperty = new SimpleObjectProperty<>();        
     Runnable step = ()->{System.err.println("Unexpected STEP");};
-    private static int runTimes = 0;
+    private static int runTimes = 500;
     
     RadarNode radarNode = new RadarNode();
     
