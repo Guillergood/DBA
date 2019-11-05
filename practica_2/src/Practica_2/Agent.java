@@ -20,6 +20,9 @@ import es.upv.dsic.gti_ia.core.AgentID;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.locks.Lock;
@@ -211,6 +214,7 @@ public class Agent extends SuperAgent implements Observable{
      * <p> Send the first message to controller and return if the login was successful. </p>
      * @author Bruno Garcia
      * @author Alberto Gurrea
+     * @author Guillermo Bueno
      */
     private void sensorsParser(String source){        
         JsonArray radarTemp = null;
@@ -391,11 +395,21 @@ public class Agent extends SuperAgent implements Observable{
         possibleMoves.add(new Pair(Command.MOVE_SW, evaluate(-1, 1) + angleValue[5]));
         possibleMoves.add(new Pair(Command.MOVE_W, evaluate(-1, 0) + angleValue[6]));
         possibleMoves.add(new Pair(Command.MOVE_NW, evaluate(-1, -1) + angleValue[7]));
+        
+        
+        final Comparator comp = (o1, o2) -> {
+            Pair<Command, Integer> o1Pair = (Pair) o1;
+            Pair<Command, Integer> o2Pair = (Pair) o2;
+            return o1Pair.getValue() - o2Pair.getValue();
+        };
+        
+        possibleMoves.sort(comp);
 
         
         
-        return move;
+        return (Command)possibleMoves.get(0).getKey();
     }
+    
     
     /**
      * <p>Evaluates vertical effort to reach a certain (nearby) place</p>
