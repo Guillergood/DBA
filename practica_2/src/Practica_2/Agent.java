@@ -7,6 +7,7 @@ package Practica_2;
 
 import DBA.SuperAgent;
 import Practica_2.GUI.fxml.WindowController;
+import Practica_2.GUI.nodes.MapNode;
 import Practica_2.GUI.nodes.RadarNode;
 import Practica_2.interfaces.Observable;
 import Practica_2.interfaces.Observer;
@@ -22,8 +23,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Platform;
@@ -59,7 +58,9 @@ public class Agent extends SuperAgent implements Observable{
         put("gonio",true);  
         //status and goal are always turned on
     }};  
-    private final Maps map;    
+    private final Maps map;
+    private Pair<Integer,Integer> mapSize;
+    private Pair<Integer, Integer> flightLimits;
     // </editor-fold>
     // <editor-fold defaultstate="collapsed" desc="Enum">
     public static enum Maps{
@@ -177,6 +178,7 @@ public class Agent extends SuperAgent implements Observable{
     // </editor-fold>
     private List<Observer<Agent>> observers = new ArrayList();
     public final ObjectProperty<WindowController.Status> statusProperty = new SimpleObjectProperty<>();
+    public final ObjectProperty<Boolean> agentIsProcesingProperty = new SimpleObjectProperty<>();
     private java.util.concurrent.Semaphore lock = new java.util.concurrent.Semaphore(0);
     private java.util.concurrent.Semaphore gui_lock = new java.util.concurrent.Semaphore(0);
     
@@ -466,10 +468,17 @@ public class Agent extends SuperAgent implements Observable{
             //System.out.println("\nRESPONSE JSON LOGIN: " + responseJson.toString());
             JsonValue resultValue = responseJson.get("result");
             JsonValue keyValue = responseJson.get("key");
+            JsonValue dimxValue = responseJson.get("dimx");
+            JsonValue dimyValue = responseJson.get("dimy");
+            JsonValue minValue = responseJson.get("min");
+            JsonValue maxValue = responseJson.get("max");
             
             if(keyValue != null)            
-                this.key = keyValue.asString();            
-            
+                this.key = keyValue.asString();     
+            if(dimxValue != null && dimyValue != null)
+                this.mapSize = new Pair(dimxValue.asInt(),dimyValue.asInt());
+            if(minValue != null && maxValue!= null)
+                this.flightLimits = new Pair(minValue.asInt(),maxValue.asInt());
             if (resultValue.asString().equals("ok"))
             {
                 System.out.println("> STATUS OK");
@@ -523,34 +532,63 @@ public class Agent extends SuperAgent implements Observable{
     }
     @Override
     public void notifyObservers() {
-        Platform.runLater(()->{
-            observers.forEach((observer)->{
-                if(observer instanceof RadarNode)
-                {
-                    Pair<Vec3d,int[][]> data = new Pair(this.gps,this.radar);
-                    observer.update(this, data);
-                }                
-                else
-                    observer.update(this, "Who are you?");
-            });            
-        });    
-        if(statusProperty.get().equals(WindowController.Status.PAUSE))
-            return;
+        java.util.concurrent.Semaphore aux_s = new java.util.concurrent.Semaphore(0);
+        long start_time = System.currentTimeMillis();        
         
-        Thread t = new Thread(()->{try {
-            Thread.sleep(50);
-            gui_lock.release();
+        Thread t = new Thread(()->{
+            try {
+                aux_s.acquire();
+                long end_time = System.currentTimeMillis();
+                long difference = end_time-start_time;
+                System.out.println("Redraw time(ms): "+difference);
+                if(difference<25)
+                    Thread.sleep(25-difference);
+                agentIsProcesingProperty.set(false);
+                gui_lock.release();
             } catch (InterruptedException ex) {
                 Logger.getLogger(Agent.class.getName()).log(Level.SEVERE, null, ex);
             }
         });
         t.setDaemon(true);
         t.start();
+        
+        Platform.runLater(()->{            
+            observers.forEach((observer)->{
+                if(observer instanceof RadarNode)
+                {
+                    Object data[] = new Object[4];
+                    data[0] = gps;
+                    data[1] = flightLimits;
+                    data[2] = radar;
+                    data[3] = magnetic;
+                    //Pair<Vec3d,int[][]> data = new Pair(this.gps,this.radar);
+                    observer.update(this, data);
+                }     
+                else if(observer instanceof MapNode)
+                {
+                    Object data[] = new Object[5];
+                    data[0] = mapSize;
+                    data[1] = flightLimits;
+                    data[2] = gps;
+                    data[3] = radar;
+                    data[4] = magnetic;
+                    
+                    observer.update(this, data);
+                }
+                else
+                    observer.update(this, "Who are you?");    
+            });
+            
+            aux_s.release();
+        });    
+        if(statusProperty.get().equals(WindowController.Status.PAUSE))
+            return;
+        
         try {
             gui_lock.acquire();
         } catch (InterruptedException ex) {
             Logger.getLogger(Agent.class.getName()).log(Level.SEVERE, null, ex);
-        }        
+        } 
     }
     
     public void nextStep(){
