@@ -1,0 +1,86 @@
+.root{
+ -fx-background-color:  #232323;
+}
+
+/* -----------------------------------------------------------------------------
+*   Combo Box
+* -----------------------------------------------------------------------------*/
+
+.combo-box{
+    -fx-background-color:  #232323;
+    -fx-background-radius: 6;     
+ }
+ 
+ /*Edit Normal Cell color */
+ .combo-box .list-cell{ 
+    -fx-background-color: #232323;
+    -fx-alignment: center;
+    -fx-text-fill: white;
+}
+
+/*Edit Cell Color Only when cursor hover cell */
+.combo-box .list-cell:hover{
+    -fx-background-color: #3A3A3A;    
+}
+
+/*Edit Cell Color Only when selected */
+.combo-box .list-cell:selected{
+    -fx-background-color: #232323; 
+    -fx-background-radius: 6; 
+    -fx-padding: 0 7 0 7;
+}
+
+.combo-box .arrow-button{
+    -fx-padding: 1 7 1 1;
+}
+
+/* -----------------------------------------------------------------------------
+*   Button
+* -----------------------------------------------------------------------------*/
+
+.button{    
+    -fx-padding: 5px;    
+}
+
+.menubtn{
+    -fx-background-color: #717171;
+}
+
+.menubtn:hover{
+    -fx-background-color: #818181;
+    -fx-border-color: #aaa;
+    -fx-border-radius: 5;
+}
+
+/* -----------------------------------------------------------------------------
+*   Scroll Pane
+* -----------------------------------------------------------------------------*/
+
+.scroll-pane {
+    -fx-background-color: transparent;
+}
+
+.scroll-pane > * {
+    -fx-background-color: transparent;
+}
+
+.scroll-pane > .corner {
+    -fx-background-color: transparent;
+}
+
+.scroll-bar:horizontal, .scroll-bar:vertical{
+    -fx-background-color:transparent;
+}
+
+.scroll-bar:horizontal .track,
+.scroll-bar:vertical .track{
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-background-radius: 0em;
+}
+
+.scroll-bar:horizontal .thumb,
+.scroll-bar:vertical .thumb {
+    -fx-background-color: white;
+    -fx-background-radius: 5em;
+}
