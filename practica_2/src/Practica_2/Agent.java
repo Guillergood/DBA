@@ -7,6 +7,7 @@ package Practica_2;
 
 import DBA.SuperAgent;
 import Practica_2.GUI.fxml.WindowController;
+import Practica_2.GUI.nodes.MapNode;
 import Practica_2.GUI.nodes.RadarNode;
 import Practica_2.interfaces.Observable;
 import Practica_2.interfaces.Observer;
@@ -25,8 +26,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Platform;
@@ -54,9 +53,7 @@ public class Agent extends SuperAgent implements Observable{
     private String key;
     // World dimensions
     private int min;
-    private int max;
-    private int dimx;
-    private int dimy;
+    private int max;;
     // Footprint map
     private int footprints[][];
     //OnRefuel mode
@@ -70,8 +67,10 @@ public class Agent extends SuperAgent implements Observable{
         put("magnetic",true);
         put("gonio",true);
         //status and goal are always turned on
-    }};
+    }};  
     private final Maps map;
+    private Pair<Integer,Integer> mapSize;
+    private Pair<Integer, Integer> flightLimits;
     // </editor-fold>
     // <editor-fold defaultstate="collapsed" desc="Enum">
     public static enum Maps{
@@ -185,6 +184,7 @@ public class Agent extends SuperAgent implements Observable{
     // </editor-fold>
     private List<Observer<Agent>> observers = new ArrayList();
     public final ObjectProperty<WindowController.Status> statusProperty = new SimpleObjectProperty<>();
+    public final ObjectProperty<Boolean> agentIsProcesingProperty = new SimpleObjectProperty<>();
     private java.util.concurrent.Semaphore lock = new java.util.concurrent.Semaphore(0);
     private java.util.concurrent.Semaphore gui_lock = new java.util.concurrent.Semaphore(0);
 
@@ -361,8 +361,13 @@ public class Agent extends SuperAgent implements Observable{
                     onRefuel = true;
             }
         }
-
-        if(onRefuel) {
+        
+        // Check if the agent is above the goal
+        if(magnetic[5][5] == 1 && elevation[5][5] != 0) {
+            move = Command.MOVE_DW;
+        }
+        else if(onRefuel) {
+            
             // If on floor, move down
             if((int)gps.z == radar[5][5]) {
                 move = Command.REFUEL;
@@ -386,6 +391,9 @@ public class Agent extends SuperAgent implements Observable{
             // El código va a estar feo pero si funciona se pone bonito después
             int[] angleValue = new int[8];
 
+            
+            // EL ERROR ESTÁ AQUÍ
+            
             // Los de al lado
             angleValue[(octant + 1) % angleValue.length] += 1;
             angleValue[(octant - 1) % angleValue.length] += 1;
@@ -400,6 +408,8 @@ public class Agent extends SuperAgent implements Observable{
             
             // El opuesto
             angleValue[(octant + 4) % angleValue.length] += 4;
+            
+            // PERO NO DESPUÉS DE AQUÍ
             
             for (int i : angleValue)
                 System.out.println(i);
@@ -460,8 +470,8 @@ public class Agent extends SuperAgent implements Observable{
         // Length of a move
         int moveUnit = 5;
 
-        // RADAR: if height exceeds max, effort is MAX_VALUE
-        if(radar[agent+x][agent+y] > max) {
+        // RADAR: if height exceeds max or is lower than min, effort is MAX_VALUE
+        if(flightLimits.getValue() <= radar[agent+x][agent+y] || flightLimits.getKey() >= radar[agent+x][agent+y]) {
             effort = Integer.MAX_VALUE;
         }
 
@@ -625,46 +635,29 @@ public class Agent extends SuperAgent implements Observable{
             //System.out.println("\nRESPONSE JSON LOGIN: " + responseJson.toString());
             JsonValue resultValue = responseJson.get("result");
             JsonValue keyValue = responseJson.get("key");
-
-            // If response to login, save world dimensions and set footprints map
-            // NOTA: seguramente lo saque de aquí
-            if("login".equals(responseJson.get("in-reply-to").asString())) {
-                System.out.println("LOGIN: guardando datos del mundo");
-                dimx = responseJson.get("dimx").asInt();
-                dimy = responseJson.get("dimy").asInt();
-                min = responseJson.get("min").asInt();
-                max = responseJson.get("max").asInt();
-
-                footprints = new int[dimx][dimy];
-
-                for(int i = 0; i < dimx; ++i) {
-                    for(int j = 0; j < dimy; ++j) {
-                        footprints[i][j] = 0;
-                    }
-                }
-            }
-
-            if(keyValue != null)
-                this.key = keyValue.asString();
-
-            // If response to login, save world dimensions and set footprints map
-            if("login".equals(responseJson.get("in-reply-to").asString())) {
-                dimx = responseJson.get("dimx").asInt();
-                dimy = responseJson.get("dimy").asInt();
-                min = responseJson.get("min").asInt();
-                max = responseJson.get("max").asInt();
-
+            JsonValue dimxValue = responseJson.get("dimx");
+            JsonValue dimyValue = responseJson.get("dimy");
+            JsonValue minValue = responseJson.get("min");
+            JsonValue maxValue = responseJson.get("max");
+            
+            if(keyValue != null)            
+                this.key = keyValue.asString(); 
+            
+            if(dimxValue != null && dimyValue != null) { 
+                this.mapSize = new Pair(dimxValue.asInt(),dimyValue.asInt());
+                
                 // Footprints map initialized to 0
-                footprints = new int[dimx][dimy];
+                footprints = new int[mapSize.getKey()][mapSize.getValue()];
 
-                for(int i = 0; i < dimx; ++i) {
-                    for(int j = 0; j < dimy; ++j) {
+                for(int i = 0; i < mapSize.getKey(); ++i) {
+                    for(int j = 0; j < mapSize.getValue(); ++j) {
                         footprints[i][j] = 0;
                     }
                 }
-
-                System.out.println("WORLD");
             }
+            
+            if(minValue != null && maxValue!= null)
+                this.flightLimits = new Pair(minValue.asInt(),maxValue.asInt());
 
             if (resultValue.asString().equals("ok"))
             {
@@ -693,7 +686,7 @@ public class Agent extends SuperAgent implements Observable{
             System.out.println("> UPDATE PERCEPTION");
             if(!updatePerception())
                 break;
-
+            
             try {
                 if(statusProperty.get().equals(WindowController.Status.PAUSE))
                     lock.acquire();
@@ -723,29 +716,58 @@ public class Agent extends SuperAgent implements Observable{
     }
     @Override
     public void notifyObservers() {
-        Platform.runLater(()->{
-            observers.forEach((observer)->{
-                if(observer instanceof RadarNode)
-                {
-                    Pair<Vec3d,int[][]> data = new Pair(this.gps,this.radar);
-                    observer.update(this, data);
-                }
-                else
-                    observer.update(this, "Who are you?");
-            });
-        });
-        if(statusProperty.get().equals(WindowController.Status.PAUSE))
-            return;
-
-        Thread t = new Thread(()->{try {
-            Thread.sleep(50);
-            gui_lock.release();
+        java.util.concurrent.Semaphore aux_s = new java.util.concurrent.Semaphore(0);
+        long start_time = System.currentTimeMillis();        
+        
+        Thread t = new Thread(()->{
+            try {
+                aux_s.acquire();
+                long end_time = System.currentTimeMillis();
+                long difference = end_time-start_time;
+                System.out.println("Redraw time(ms): "+difference);
+                if(difference<25)
+                    Thread.sleep(25-difference);
+                agentIsProcesingProperty.set(false);
+                gui_lock.release();
             } catch (InterruptedException ex) {
                 Logger.getLogger(Agent.class.getName()).log(Level.SEVERE, null, ex);
             }
         });
         t.setDaemon(true);
         t.start();
+        
+        Platform.runLater(()->{            
+            observers.forEach((observer)->{
+                if(observer instanceof RadarNode)
+                {
+                    Object data[] = new Object[4];
+                    data[0] = gps;
+                    data[1] = flightLimits;
+                    data[2] = radar;
+                    data[3] = magnetic;
+                    //Pair<Vec3d,int[][]> data = new Pair(this.gps,this.radar);
+                    observer.update(this, data);
+                }     
+                else if(observer instanceof MapNode)
+                {
+                    Object data[] = new Object[5];
+                    data[0] = mapSize;
+                    data[1] = flightLimits;
+                    data[2] = gps;
+                    data[3] = radar;
+                    data[4] = magnetic;
+                    
+                    observer.update(this, data);
+                }
+                else
+                    observer.update(this, "Who are you?");    
+            });
+            
+            aux_s.release();
+        });    
+        if(statusProperty.get().equals(WindowController.Status.PAUSE))
+            return;
+        
         try {
             gui_lock.acquire();
         } catch (InterruptedException ex) {
