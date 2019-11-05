@@ -341,49 +341,126 @@ public class Agent extends SuperAgent implements Observable{
      * Currently moves based on the angle of gonio.
      * For test purposes only,
      * @author Juan Ocaña
+     * @author Guillermo Bueno
      * @return the action that Agent will perform
      */
     private Command chooseMovement() throws Exception {
+        
+        // Return value
+        Command move;
+        
+        // Octant which the goal is in
+        int parts = 360/8;
         float angle = (float)gonio.getValue();
+        int octant = (int)(angle/parts);
+        
+        // Primero, si alguna de las casillas de alrededor muestra fuel warning, 
+        // la acción es bajar y si está en el suelo repostar.
+        
+        
+        
+        // La idea es penalizar los movimientos que no sean moverse en el ángulo
+        // del objetivo, y luego sumarle el esfuerzo para llegar, es decir, si 
+        // la casilla está a elevation -15 y cada movimiento hacia arriba son 5, sería un esfuerzo de
+        // 3. Elegir casilla, y después comprobar si está más alta que nosotros. Si es así, subir.
+        
+        // El código va a estar feo pero si funciona se pone bonito después
 
-        // We have 8 movements, so the angle/45º will tell us where to move
 
-        int parts = 360/8; //45 degrees
 
-        int movementCode =(int) (angle/parts);
+        // Moves to evaluate:
+        ArrayList<Pair> possibleMoves = new ArrayList();
+        possibleMoves.add(new Pair(Command.MOVE_N, evaluate(0, -1)));
+        possibleMoves.add(new Pair(Command.MOVE_NE, evaluate(1, -1)));
+        possibleMoves.add(new Pair(Command.MOVE_E, evaluate(1, 0)));
+        possibleMoves.add(new Pair(Command.MOVE_SE, evaluate(1, 1)));
+        possibleMoves.add(new Pair(Command.MOVE_S, evaluate(0, 1)));
+        possibleMoves.add(new Pair(Command.MOVE_SW, evaluate(-1, 1)));
+        possibleMoves.add(new Pair(Command.MOVE_W, evaluate(-1, 0)));
+        possibleMoves.add(new Pair(Command.MOVE_NW, evaluate(-1, -1)));
 
-        Command movement;
 
-        switch(movementCode){
+
+        switch(octant){
             case 0:
-                movement = Command.MOVE_N;
+                move = Command.MOVE_N;
                 break;
             case 1:
-                movement = Command.MOVE_NE;
+                move = Command.MOVE_NE;
                 break;
             case 2:
-                movement = Command.MOVE_E;
+                move = Command.MOVE_E;
                 break;
             case 3:
-                movement = Command.MOVE_SE;
+                move = Command.MOVE_SE;
                  break;
             case 4:
-                movement = Command.MOVE_S;
+                move = Command.MOVE_S;
                 break;
             case 5:
-                movement = Command.MOVE_SW;
+                move = Command.MOVE_SW;
                 break;
             case 6:
-                movement = Command.MOVE_W;
+                move = Command.MOVE_W;
                 break;
             case 7:
-                movement = Command.MOVE_NW;
+                move = Command.MOVE_NW;
                 break;
             default:
                 throw new Exception("ERROR WHILE PLANNING WHERE TO GO");
         }
         
-        return movement;
+        return move;
+    }
+    
+    /**
+     * <p>Evaluates vertical effort to reach a certain (nearby) place</p>
+     * The place must be detected in the elevation and radar sensors.
+     * @author Juan Ocaña
+     * @param x X relative coordinate to the agent
+     * @param y Y relative coordinate to the agent
+     * @return evaluation
+     */
+    private int evaluate(int x, int y) {
+        
+        // Return value
+        int effort = 0;
+        
+        // Agent position in sensor matrix
+        int agent = 5;
+        
+        // Lngth of a move
+        int moveUnit = 5;
+        
+        // RADAR: if height exceeds max, effort is MAX_VALUE
+        if(radar[agent+x][agent+y] > max) {
+            effort = Integer.MAX_VALUE;
+        }
+        
+        // ELEVATION: check elevation and calculate how many moves needed to reach
+        effort += Math.abs(elevation[agent+x][agent+y]/moveUnit);
+        
+        return effort;
+    }
+    
+        /**
+     * <p>Evaluates vertical effort to reach a certain (nearby) place</p>
+     * The place must be detected in the elevation and radar sensors.
+     * @author Juan Ocaña
+     * @param x X relative coordinate to the agent
+     * @param y Y relative coordinate to the agent
+     * @return evaluation
+     */
+    private boolean fuelWarning(int x, int y) {
+        
+        // Agent position in sensor matrix
+        int agent = 5;
+        
+        // Fuel consumption per move
+        double fuelCon = 0.5;
+        
+        // RADAR: if height * fuelCon >= fuelWarning, warning is true
+        return (radar[agent+x][agent+y] * fuelCon >= fuelWarning);
     }
     
     /**
@@ -527,6 +604,8 @@ public class Agent extends SuperAgent implements Observable{
                 
                 // Register footprint
                 ++footprints[(int)gps.x][(int)gps.y];
+                
+                // TO DO: fuel warning
                 
                 // Choose next movement
                 Command act = chooseMovement();
