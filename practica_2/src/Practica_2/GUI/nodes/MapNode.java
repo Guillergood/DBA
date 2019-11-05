@@ -10,6 +10,7 @@ import Practica_2.interfaces.Observer;
 import com.sun.javafx.geom.Rectangle;
 import com.sun.javafx.geom.Vec3d;
 import java.util.HashMap;
+import javafx.application.Platform;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.value.ChangeListener;
@@ -19,6 +20,7 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.util.Pair;
 
@@ -29,6 +31,7 @@ import javafx.util.Pair;
 public class MapNode extends ScrollPane implements Observer<Agent> {
 
     Canvas canvas = new Canvas();
+    Canvas canvas2 = new Canvas();
     public final DoubleProperty canvasWidthProperty = new SimpleDoubleProperty(null, "width", 2.0);       
     public final DoubleProperty canvasHeightProperty = new SimpleDoubleProperty(null, "height", 2.0); 
     public final DoubleProperty cellSizeProperty = new SimpleDoubleProperty(null, "height", 50.0); 
@@ -36,6 +39,7 @@ public class MapNode extends ScrollPane implements Observer<Agent> {
     private Pair<Integer,Integer> oldPOS = null;
     private HashMap<Pair<Integer,Integer>,Integer> drawedCells = new HashMap();
     private Pair<Integer,Integer> colorLerpLimits;
+    private Pane content = new Pane();
     
     
     ChangeListener<Number> resizeCanvas = new ChangeListener<Number>() {
@@ -44,9 +48,11 @@ public class MapNode extends ScrollPane implements Observer<Agent> {
             double cellSize = cellSizeProperty.get();
             double width = canvasWidthProperty.get() * cellSize;
             double height = canvasHeightProperty.get() * cellSize;
-            //System.out.println("resize("+width+", "+height+")");
+            
             canvas.widthProperty().set(width);
             canvas.heightProperty().set(height);
+            canvas2.widthProperty().set(width);
+            canvas2.heightProperty().set(height);
         }
     };
     
@@ -68,31 +74,42 @@ public class MapNode extends ScrollPane implements Observer<Agent> {
             this.canvasHeightProperty.set(mapHeight);
             
             double cellSize = cellSizeProperty.get();
-            double wp = gps.x*cellSize/(mapWidth*cellSize);
-            double hp = gps.y*cellSize/(mapHeight*cellSize);
+            double wp = (gps.x+1)*cellSize/(mapWidth*cellSize);
+            double hp = (gps.y+1)*cellSize/(mapHeight*cellSize);
             
-            this.setHvalue(wp);
-            this.setVvalue(hp);            
+            Platform.runLater(()->{
+                this.setHvalue(wp);
+                this.setVvalue(hp);  
+            });                      
             
             isInitialized = true;
         }               
         
         GraphicsContext gc = canvas.getGraphicsContext2D();
+        GraphicsContext gc2 = canvas2.getGraphicsContext2D();
         
         for (int i = 0; i < 11; i++) {
             for (int j = 0; j < 11; j++) {
                 int x = (int) (gps.x - (5-i));
                 int y = (int) (gps.y - (5-j));
                 Pair<Integer,Integer> pos = new Pair(x,y);
-                System.out.println("draw at "+pos);
                 
                 if(i==5 && j==5)
                 {
                     if(oldPOS!=null)
-                    {
+                    {   
+                        double cellSize = this.cellSizeProperty.get();
+                        double cx = x*cellSize + cellSize/2;
+                        double cy = y*cellSize + cellSize/2;
+                        double old_cx = oldPOS.getKey()*cellSize + cellSize/2;
+                        double old_cy = oldPOS.getValue()*cellSize + cellSize/2;
+                        
+                        gc2.setStroke(Color.GREEN);
+                        gc2.setLineWidth(2);
                         
                         int oldHeight = drawedCells.get(oldPOS);
                         fillCell(oldPOS.getKey(),oldPOS.getValue(),gc,oldHeight);
+                        gc2.strokeLine(old_cx,old_cy, cx, cy);
                     }
                     fillCell(x,y,gc,Color.GREEN);
                     drawedCells.put(pos, radar[i][j]);
@@ -126,10 +143,11 @@ public class MapNode extends ScrollPane implements Observer<Agent> {
        
         canvasWidthProperty.addListener(resizeCanvas);
         canvasHeightProperty.addListener(resizeCanvas);
-        cellSizeProperty.addListener(resizeCanvas);
-        
-        cellSizeProperty.set(cellSize);
-        this.setContent(canvas);
+        cellSizeProperty.addListener(resizeCanvas);        
+        cellSizeProperty.set(cellSize);     
+       
+        content.getChildren().addAll(canvas,canvas2);
+        this.setContent(content);
     }
     
     private Point2D getCell(int x,int y){
@@ -170,4 +188,14 @@ public class MapNode extends ScrollPane implements Observer<Agent> {
         gc.fillRect(cellPos.getX(), cellPos.getY(),
                 cellSize, cellSize);
     }    
+    
+    public void clear(){
+        isInitialized = false;
+        oldPOS = null;
+        drawedCells.clear();
+        GraphicsContext gc = canvas.getGraphicsContext2D();
+        GraphicsContext gc2 = canvas2.getGraphicsContext2D();
+        gc.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
+        gc2.clearRect(0, 0, canvas2.getWidth(), canvas2.getHeight());
+    }
 }

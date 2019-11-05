@@ -73,8 +73,10 @@ public class WindowController implements Initializable {
         boolean flag = statusProperty.get().equals(Status.STOP); 
         agentIsProcesingProperty.set(true);
         statusProperty.set(Status.RUNNING);        
-        if(flag)
+        if(flag){
+           mapNode.clear();
            createAgent();        
+        }
     }
 
     @FXML
@@ -93,6 +95,7 @@ public class WindowController implements Initializable {
     private void onDebugClick(ActionEvent event) {
         agentIsProcesingProperty.set(true);
         statusProperty.set(Status.PAUSE);
+        mapNode.clear();
         createAgent();        
     }
 
@@ -205,10 +208,10 @@ public class WindowController implements Initializable {
     }
     
     private void createAgent(){          
-        try {            
+        try {    
             Agent gb_agent = Main.getAgent(cb_map.getValue());
             gb_agent.statusProperty.bindBidirectional(statusProperty);  
-            gb_agent.agentIsProcesingProperty.bindBidirectional(agentIsProcesingProperty);
+            gb_agent.agentIsProcesingProperty.bindBidirectional(agentIsProcesingProperty);            
             gb_agent.addOvserver(radarNode);
             gb_agent.addOvserver(mapNode);
             step = () -> {gb_agent.nextStep();};
