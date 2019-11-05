@@ -556,12 +556,23 @@ public class Agent extends SuperAgent implements Observable{
             observers.forEach((observer)->{
                 if(observer instanceof RadarNode)
                 {
-                    Pair<Vec3d,int[][]> data = new Pair(this.gps,this.radar);
+                    Object data[] = new Object[4];
+                    data[0] = gps;
+                    data[1] = flightLimits;
+                    data[2] = radar;
+                    data[3] = magnetic;
+                    //Pair<Vec3d,int[][]> data = new Pair(this.gps,this.radar);
                     observer.update(this, data);
                 }     
                 else if(observer instanceof MapNode)
                 {
-                    Pair<Pair<Object,Object>,Object> data = new Pair(new Pair(mapSize,flightLimits),radar);                    
+                    Object data[] = new Object[5];
+                    data[0] = mapSize;
+                    data[1] = flightLimits;
+                    data[2] = gps;
+                    data[3] = radar;
+                    data[4] = magnetic;
+                    
                     observer.update(this, data);
                 }
                 else

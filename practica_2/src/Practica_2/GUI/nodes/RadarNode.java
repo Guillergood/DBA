@@ -23,31 +23,42 @@ public class RadarNode extends GridNode{
     
     @Override
     public void update(Agent o, Object data) {
-        Pair<Vec3d,int[][]> parsedData = (Pair<Vec3d,int[][]>) data;
-        String gps_str = (parsedData.getKey()==null)?"offline":
-                "{"+parsedData.getKey().x+", "+parsedData.getKey().y+", "+parsedData.getKey().z+"}";
-        int[][] radar = parsedData.getValue();        
+        Object parsedData[] = (Object[]) data;
+        Vec3d gps = (Vec3d) parsedData[0];
+        Pair<Integer,Integer> flightLimits = (Pair<Integer,Integer>) parsedData[1];
+        String gps_str = (gps==null)?"offline":
+                "{"+gps.x+", "+gps.y+", "+gps.z+"}";
+        int[][] radar = (int[][]) parsedData[2];        
+        int[][] magnetic = (int[][]) parsedData[3];        
         
         for (int i = 0; i < 11; i++) {
             for (int j = 0; j < 11; j++) {
                 int value = radar[i][j];
+                Label label = new Label(""+value);
+                if(value>=flightLimits.getValue())
+                    label.setStyle("-fx-background-color: darkred");
+                if(value>flightLimits.getValue() && value<flightLimits.getValue() && value>gps.z)
+                    label.setStyle("-fx-background-color: red");
+               
                 if(i==5 && j==5)
                 {
                     String str_tp = String.format("Agent GPS: %s\nMap Height: %d",gps_str,value);
-                    if(parsedData.getKey()!=null)
+                    if(gps!=null)
                     {
-                        double agentHeight = parsedData.getKey().z;
+                        double agentHeight = gps.z;
                         int height_gap = (int) (agentHeight-value);
                         str_tp = str_tp.concat("\nHeight gap: "+height_gap);
                     }                        
                     
                     Tooltip tooltip = new Tooltip(str_tp);
-                    this.setCell(i, j, new Label(""+value),tooltip , Color.LIGHTGREEN,Color.web("#9affae"));
+                    this.setCell(i, j, label,tooltip , Color.LIGHTGREEN,Color.web("#9affae"));
                 }                
                 else if(value == 0)
                     this.setCell(i, j, null, new Tooltip("End of map"), Color.RED);
+                else if(magnetic[i][j]!=0)
+                    this.setCell(i, j, label, new Tooltip("<goal>\nHeight: "+value), Color.YELLOW,Color.LIGHTYELLOW);
                 else
-                    this.setCell(i, j, new Label(""+value), new Tooltip(""+value), Color.LIGHTGRAY,Color.web("#e7e7e7"));
+                    this.setCell(i, j, label, new Tooltip(""+value), Color.LIGHTGRAY,Color.web("#e7e7e7"));
             }
         }
         
