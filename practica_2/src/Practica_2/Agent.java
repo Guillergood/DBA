@@ -20,6 +20,9 @@ import es.upv.dsic.gti_ia.core.AgentID;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.locks.Lock;
@@ -211,6 +214,7 @@ public class Agent extends SuperAgent implements Observable{
      * <p> Send the first message to controller and return if the login was successful. </p>
      * @author Bruno Garcia
      * @author Alberto Gurrea
+     * @author Guillermo Bueno
      */
     private void sensorsParser(String source){        
         JsonArray radarTemp = null;
@@ -349,10 +353,22 @@ public class Agent extends SuperAgent implements Observable{
         // Return value
         Command move;
         
+        // Primero, si alguna de las casillas de alrededor muestra fuel warning, 
+        // la acción es bajar y si está en el suelo repostar.
+        for(int i = -1; i <= 1; ++i) {
+            for (int j = -1; j <= 1; ++j) {
+                if (fuelWarning(i, j))
+                    onRefuel = true;
+            }
+        }
+        
         if(onRefuel) {
             // If on floor, move down
-            if((int)gps.z == radar[5][5])
+            if((int)gps.z == radar[5][5]) {
                 move = Command.REFUEL;
+                onRefuel = false;
+            }
+
             else
                 move = Command.MOVE_DW;
         }
@@ -361,16 +377,6 @@ public class Agent extends SuperAgent implements Observable{
             int parts = 360/8;
             float angle = (float)gonio.getValue();
             int octant = (int)(angle/parts);
-
-            // Primero, si alguna de las casillas de alrededor muestra fuel warning, 
-            // la acción es bajar y si está en el suelo repostar.
-            for(int i = -1; i <= 1; ++i) {
-                for (int j = -1; j <= 1; ++j) {
-                    if (fuelWarning(i, j))
-                        onRefuel = true;
-                        break;
-                }
-            }
 
             // La idea es penalizar los movimientos que no sean moverse en el ángulo
             // del objetivo, y luego sumarle el esfuerzo para llegar, es decir, si 
@@ -405,16 +411,24 @@ public class Agent extends SuperAgent implements Observable{
             possibleMoves.add(new Pair(Command.MOVE_W, evaluate(-1, 0) + angleValue[6]));
             possibleMoves.add(new Pair(Command.MOVE_NW, evaluate(-1, -1) + angleValue[7]));
             
-            
-            Pair chosen = possibleMoves.get(0);
-            if (above((Command)chosen.getKey()))
+            final Comparator comp = (o1, o2) -> {
+                Pair<Command, Integer> o1Pair = (Pair) o1;
+                Pair<Command, Integer> o2Pair = (Pair) o2;
+                return o1Pair.getValue() - o2Pair.getValue();
+            };
+        
+            possibleMoves.sort(comp);
+
+            Command chosen = (Command)possibleMoves.get(0).getKey();
+            if (above(chosen))
                 move = Command.MOVE_UP;
             else
-                move = (Command)chosen.getKey();
+                move = chosen;
         }
  
         return move;
     }
+    
     
     /**
      * <p>Evaluates vertical effort to reach a certain (nearby) place</p>
