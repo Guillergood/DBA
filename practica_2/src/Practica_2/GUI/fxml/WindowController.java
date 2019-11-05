@@ -31,13 +31,12 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
-import javafx.scene.paint.Color;
 
 
 /**
  * FXML Controller class
  *
- * @author brbco
+ * @author Bruno Garcia
  */
 public class WindowController implements Initializable {
 
@@ -129,8 +128,9 @@ public class WindowController implements Initializable {
                     cb_map.disableProperty().set(false);
                     toolBox.getChildren().addAll(btnPlay,btnDebug);
                     step = ()->{System.err.println("Unexpected STEP");}; 
-                    //container.getChildren().clear();
-                    //container.getChildren().add(offlineNode);  
+                    toolBox.setDisable(false);
+                    toolBox.setCursor(Cursor.DEFAULT);
+                    
                     break;
                 case RUNNING:
                     btnForward.disableProperty().set(true);

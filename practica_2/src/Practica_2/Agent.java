@@ -314,6 +314,11 @@ public class Agent extends SuperAgent implements Observable{
         return checkStatus();
     }   
     
+    /**
+     * <p> Try get the perceptions from controller and save it on internals vars. </p>
+     * @author Bruno Garcia
+     * @return true, if is the operation successful.
+     */
     private boolean updatePerception(){
         try {
             String perception_str = getMsg();

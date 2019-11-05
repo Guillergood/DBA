@@ -7,7 +7,6 @@ package Practica_2.GUI.nodes;
 
 import Practica_2.Agent;
 import Practica_2.interfaces.Observer;
-import com.sun.javafx.geom.Rectangle;
 import com.sun.javafx.geom.Vec3d;
 import java.util.HashMap;
 import javafx.application.Platform;
@@ -26,7 +25,7 @@ import javafx.util.Pair;
 
 /**
  *
- * @author brbco
+ * @author Bruno Garcia
  */
 public class MapNode extends ScrollPane implements Observer<Agent> {
 
