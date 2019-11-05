@@ -47,7 +47,6 @@ public class Agent extends SuperAgent implements Observable{
     private boolean status;
     private boolean goal;
     private ArrayList<Vec3d> trace;
-    private int fuelWarning;
     private final String id;
     private String key;
     // World dimensions
@@ -57,6 +56,8 @@ public class Agent extends SuperAgent implements Observable{
     private int dimy;
     // Footprint map
     private int footprints[][];
+    //OnRefuel mode
+    private boolean onRefuel;
     // Active sensors
     private HashMap<String, Boolean> activeSensors = new HashMap<String,Boolean>(){{
         put("gps",true);  
@@ -166,10 +167,6 @@ public class Agent extends SuperAgent implements Observable{
         return trace;
     }
 
-    public int getFuelWarning() {
-        return fuelWarning;
-    }
-
     public String getId() {
         return id;
     }
@@ -200,6 +197,9 @@ public class Agent extends SuperAgent implements Observable{
             else if(newValue.equals(WindowController.Status.STOP))
                 lock.release();
         });        
+        
+        // OnRefuel at start is on:
+        onRefuel = true;
     }
     
     /**
@@ -349,51 +349,70 @@ public class Agent extends SuperAgent implements Observable{
         // Return value
         Command move;
         
-        // Octant which the goal is in
-        int parts = 360/8;
-        float angle = (float)gonio.getValue();
-        int octant = (int)(angle/parts);
-        
-        // Primero, si alguna de las casillas de alrededor muestra fuel warning, 
-        // la acción es bajar y si está en el suelo repostar.
-        
-        
-        
-        // La idea es penalizar los movimientos que no sean moverse en el ángulo
-        // del objetivo, y luego sumarle el esfuerzo para llegar, es decir, si 
-        // la casilla está a elevation -15 y cada movimiento hacia arriba son 5, sería un esfuerzo de
-        // 3. Elegir casilla, y después comprobar si está más alta que nosotros. Si es así, subir.
-        
-        // El código va a estar feo pero si funciona se pone bonito después
-        int[] angleValue = new int[8];
-        
-        // El suyo
-        ++angleValue[octant];
-        
-        // Los de al lado
-        angleValue[(octant + 1) % angleValue.length] += 2;
-        angleValue[(octant - 1) % angleValue.length] += 2;
-        
-        // Los otros
-        angleValue[(octant + 2) % angleValue.length] += 3;
-        angleValue[(octant - 2) % angleValue.length] += 3;
-        
-        // El opuesto
-        angleValue[(octant + 3) % angleValue.length] += 4;
+        if(onRefuel) {
+            // If on floor, move down
+            if((int)gps.z == radar[5][5])
+                move = Command.REFUEL;
+            else
+                move = Command.MOVE_DW;
+        }
+        else {
+            // Octant which the goal is in
+            int parts = 360/8;
+            float angle = (float)gonio.getValue();
+            int octant = (int)(angle/parts);
 
-        // Moves to evaluate:
-        ArrayList<Pair> possibleMoves = new ArrayList();
-        possibleMoves.add(new Pair(Command.MOVE_N, evaluate(0, -1) + angleValue[0]));
-        possibleMoves.add(new Pair(Command.MOVE_NE, evaluate(1, -1) + angleValue[1]));
-        possibleMoves.add(new Pair(Command.MOVE_E, evaluate(1, 0) + angleValue[2]));
-        possibleMoves.add(new Pair(Command.MOVE_SE, evaluate(1, 1) + angleValue[3]));
-        possibleMoves.add(new Pair(Command.MOVE_S, evaluate(0, 1) + angleValue[4]));
-        possibleMoves.add(new Pair(Command.MOVE_SW, evaluate(-1, 1) + angleValue[5]));
-        possibleMoves.add(new Pair(Command.MOVE_W, evaluate(-1, 0) + angleValue[6]));
-        possibleMoves.add(new Pair(Command.MOVE_NW, evaluate(-1, -1) + angleValue[7]));
+            // Primero, si alguna de las casillas de alrededor muestra fuel warning, 
+            // la acción es bajar y si está en el suelo repostar.
+            for(int i = -1; i <= 1; ++i) {
+                for (int j = -1; j <= 1; ++j) {
+                    if (fuelWarning(i, j))
+                        onRefuel = true;
+                        break;
+                }
+            }
 
-        
-        
+            // La idea es penalizar los movimientos que no sean moverse en el ángulo
+            // del objetivo, y luego sumarle el esfuerzo para llegar, es decir, si 
+            // la casilla está a elevation -15 y cada movimiento hacia arriba son 5, sería un esfuerzo de
+            // 3. Elegir casilla, y después comprobar si está más alta que nosotros. Si es así, subir.
+
+            // El código va a estar feo pero si funciona se pone bonito después
+            int[] angleValue = new int[8];
+
+            // El suyo
+            ++angleValue[octant];
+
+            // Los de al lado
+            angleValue[(octant + 1) % angleValue.length] += 2;
+            angleValue[(octant - 1) % angleValue.length] += 2;
+
+            // Los otros
+            angleValue[(octant + 2) % angleValue.length] += 3;
+            angleValue[(octant - 2) % angleValue.length] += 3;
+
+            // El opuesto
+            angleValue[(octant + 3) % angleValue.length] += 4;
+
+            // Moves to evaluate:
+            ArrayList<Pair> possibleMoves = new ArrayList();
+            possibleMoves.add(new Pair(Command.MOVE_N, evaluate(0, -1) + angleValue[0]));
+            possibleMoves.add(new Pair(Command.MOVE_NE, evaluate(1, -1) + angleValue[1]));
+            possibleMoves.add(new Pair(Command.MOVE_E, evaluate(1, 0) + angleValue[2]));
+            possibleMoves.add(new Pair(Command.MOVE_SE, evaluate(1, 1) + angleValue[3]));
+            possibleMoves.add(new Pair(Command.MOVE_S, evaluate(0, 1) + angleValue[4]));
+            possibleMoves.add(new Pair(Command.MOVE_SW, evaluate(-1, 1) + angleValue[5]));
+            possibleMoves.add(new Pair(Command.MOVE_W, evaluate(-1, 0) + angleValue[6]));
+            possibleMoves.add(new Pair(Command.MOVE_NW, evaluate(-1, -1) + angleValue[7]));
+            
+            
+            Pair chosen = possibleMoves.get(0);
+            if (above((Command)chosen.getKey()))
+                move = Command.MOVE_UP;
+            else
+                move = (Command)chosen.getKey();
+        }
+ 
         return move;
     }
     
@@ -422,7 +441,10 @@ public class Agent extends SuperAgent implements Observable{
         }
         
         // ELEVATION: check elevation and calculate how many moves needed to reach
-        effort += Math.abs(elevation[agent+x][agent+y]/moveUnit);
+        // the place if it is above the agent
+        if(elevation[agent+x][agent+y]/moveUnit < 0)
+            effort += Math.abs(elevation[agent+x][agent+y]/moveUnit);
+        
         
         return effort;
     }
@@ -443,8 +465,55 @@ public class Agent extends SuperAgent implements Observable{
         // Fuel consumption per move
         double fuelCon = 0.5;
         
-        // RADAR: if height * fuelCon >= fuelWarning, warning is true
-        return (radar[agent+x][agent+y] * fuelCon >= fuelWarning);
+        // ELEVATION: if height * fuelCon >= fuelWarning, warning is true
+        return (elevation[agent+x][agent+y] * fuelCon >= fuel);
+    }
+    
+    private boolean above(Command c) {
+        
+        // Agent position in sensor matrix
+        int agent = 5;
+        
+        // Relative coordinates
+        int x = 0;
+        int y = 0;
+        
+        switch(c) {
+            case MOVE_N:
+                x = 0;
+                y = -1;
+                break;
+            case MOVE_NE:
+                x = 1;
+                y = -1;
+                break;
+            case MOVE_E:
+                x = 1;
+                y = 0;
+                break;
+            case MOVE_SE:
+                x = 1;
+                y = 1;
+                break;
+            case MOVE_S:
+                x = 0;
+                y = 1;
+                break;
+            case MOVE_SW:
+                x = -1;
+                y = 1;
+                break;
+            case MOVE_W:
+                x = -1;
+                y = 0;
+                break;
+            case MOVE_NW:
+                x = -1;
+                y = -1;
+                break;
+        }
+        
+        return (elevation[agent+x][agent+y] < 0);
     }
     
     /**
@@ -588,8 +657,6 @@ public class Agent extends SuperAgent implements Observable{
                 
                 // Register footprint
                 ++footprints[(int)gps.x][(int)gps.y];
-                
-                // TO DO: fuel warning
                 
                 // Choose next movement
                 Command act = chooseMovement();
