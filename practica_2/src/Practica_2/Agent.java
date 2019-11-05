@@ -365,50 +365,34 @@ public class Agent extends SuperAgent implements Observable{
         // 3. Elegir casilla, y después comprobar si está más alta que nosotros. Si es así, subir.
         
         // El código va a estar feo pero si funciona se pone bonito después
-
-
+        int[] angleValue = new int[8];
+        
+        // El suyo
+        ++angleValue[octant];
+        
+        // Los de al lado
+        angleValue[(octant + 1) % angleValue.length] += 2;
+        angleValue[(octant - 1) % angleValue.length] += 2;
+        
+        // Los otros
+        angleValue[(octant + 2) % angleValue.length] += 3;
+        angleValue[(octant - 2) % angleValue.length] += 3;
+        
+        // El opuesto
+        angleValue[(octant + 3) % angleValue.length] += 4;
 
         // Moves to evaluate:
         ArrayList<Pair> possibleMoves = new ArrayList();
-        possibleMoves.add(new Pair(Command.MOVE_N, evaluate(0, -1)));
-        possibleMoves.add(new Pair(Command.MOVE_NE, evaluate(1, -1)));
-        possibleMoves.add(new Pair(Command.MOVE_E, evaluate(1, 0)));
-        possibleMoves.add(new Pair(Command.MOVE_SE, evaluate(1, 1)));
-        possibleMoves.add(new Pair(Command.MOVE_S, evaluate(0, 1)));
-        possibleMoves.add(new Pair(Command.MOVE_SW, evaluate(-1, 1)));
-        possibleMoves.add(new Pair(Command.MOVE_W, evaluate(-1, 0)));
-        possibleMoves.add(new Pair(Command.MOVE_NW, evaluate(-1, -1)));
+        possibleMoves.add(new Pair(Command.MOVE_N, evaluate(0, -1) + angleValue[0]));
+        possibleMoves.add(new Pair(Command.MOVE_NE, evaluate(1, -1) + angleValue[1]));
+        possibleMoves.add(new Pair(Command.MOVE_E, evaluate(1, 0) + angleValue[2]));
+        possibleMoves.add(new Pair(Command.MOVE_SE, evaluate(1, 1) + angleValue[3]));
+        possibleMoves.add(new Pair(Command.MOVE_S, evaluate(0, 1) + angleValue[4]));
+        possibleMoves.add(new Pair(Command.MOVE_SW, evaluate(-1, 1) + angleValue[5]));
+        possibleMoves.add(new Pair(Command.MOVE_W, evaluate(-1, 0) + angleValue[6]));
+        possibleMoves.add(new Pair(Command.MOVE_NW, evaluate(-1, -1) + angleValue[7]));
 
-
-
-        switch(octant){
-            case 0:
-                move = Command.MOVE_N;
-                break;
-            case 1:
-                move = Command.MOVE_NE;
-                break;
-            case 2:
-                move = Command.MOVE_E;
-                break;
-            case 3:
-                move = Command.MOVE_SE;
-                 break;
-            case 4:
-                move = Command.MOVE_S;
-                break;
-            case 5:
-                move = Command.MOVE_SW;
-                break;
-            case 6:
-                move = Command.MOVE_W;
-                break;
-            case 7:
-                move = Command.MOVE_NW;
-                break;
-            default:
-                throw new Exception("ERROR WHILE PLANNING WHERE TO GO");
-        }
+        
         
         return move;
     }
@@ -424,12 +408,12 @@ public class Agent extends SuperAgent implements Observable{
     private int evaluate(int x, int y) {
         
         // Return value
-        int effort = 0;
+        int effort = 1;
         
         // Agent position in sensor matrix
         int agent = 5;
         
-        // Lngth of a move
+        // Length of a move
         int moveUnit = 5;
         
         // RADAR: if height exceeds max, effort is MAX_VALUE
