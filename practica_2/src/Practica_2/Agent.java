@@ -279,6 +279,7 @@ public class Agent extends SuperAgent implements Observable{
             Float key = gonioObject.get("distance").asFloat();
             Float value = gonioObject.get("angle").asFloat();
             gonio = new Pair(key,value);
+            System.out.println("\nGonio es: "+ key + " " + value);
         }
     }
 
@@ -399,24 +400,31 @@ public class Agent extends SuperAgent implements Observable{
             // EL ERROR ESTÁ AQUÍ
             
             // Los de al lado
+            
+            
+            
+            
+            
             angleValue[(octant + 1) % angleValue.length] += 1;
-            angleValue[(octant - 1) % angleValue.length] += 1;
+            angleValue[Math.abs((octant - 1) % angleValue.length)] += 1;
 
             // Los otros
             angleValue[(octant + 2) % angleValue.length] += 2;
-            angleValue[(octant - 2) % angleValue.length] += 2;
+            angleValue[Math.abs((octant - 2) % angleValue.length)] += 2;
 
             // Los otros otros
             angleValue[(octant + 3) % angleValue.length] += 3;
-            angleValue[(octant - 3) % angleValue.length] += 3;
-            
+            angleValue[Math.abs((octant - 3) % angleValue.length)] += 3;
+
             // El opuesto
             angleValue[(octant + 4) % angleValue.length] += 4;
             
+            
+            
             // PERO NO DESPUÉS DE AQUÍ
             
-            for (int i : angleValue)
-                System.out.println(i);
+            /*for (int i : angleValue)
+                System.out.println(i);*/
 
             // Moves to evaluate:
             ArrayList<Pair> possibleMoves = new ArrayList();
@@ -429,10 +437,14 @@ public class Agent extends SuperAgent implements Observable{
             possibleMoves.add(new Pair(Command.MOVE_W, evaluate(-1, 0) + angleValue[6]));
             possibleMoves.add(new Pair(Command.MOVE_NW, evaluate(-1, -1) + angleValue[7]));
             
+            
+            
+            
+            
             // La wena depuración:
-            for(Pair p : possibleMoves) {
+            /*for(Pair p : possibleMoves) {
                 System.out.println(p);
-            }
+            }*/
 
             final Comparator comp = (o1, o2) -> {
                 Pair<Command, Integer> o1Pair = (Pair) o1;
@@ -443,6 +455,8 @@ public class Agent extends SuperAgent implements Observable{
             possibleMoves.sort(comp);
 
             Command chosen = (Command)possibleMoves.get(0).getKey();
+            
+            
             System.out.println("THE CHOSEN ONE:" + chosen);
             
             if (above(chosen))
@@ -459,6 +473,7 @@ public class Agent extends SuperAgent implements Observable{
      * <p>Evaluates vertical effort to reach a certain (nearby) place</p>
      * The place must be detected in the elevation and radar sensors.
      * @author Juan Ocaña
+     * @author Guillermo Bueno
      * @param x X relative coordinate to the agent
      * @param y Y relative coordinate to the agent
      * @return evaluation
@@ -473,16 +488,24 @@ public class Agent extends SuperAgent implements Observable{
 
         // Length of a move
         int moveUnit = 5;
+        
+        
 
-        // RADAR: if height exceeds max or is lower than min, effort is MAX_VALUE
-        if(flightLimits.getValue() <= radar[agent+x][agent+y] || flightLimits.getKey() >= radar[agent+x][agent+y]) {
-            effort = Integer.MAX_VALUE;
-        }
+        
+        
+        
 
         // ELEVATION: check elevation and calculate how many moves needed to reach
         // the place if it is above the agent
-        if(elevation[agent+x][agent+y]/moveUnit < 0)
+        if(elevation[agent+x][agent+y] < 0)
             effort += Math.abs(elevation[agent+x][agent+y]/moveUnit);
+        
+        // RADAR: if height exceeds max or is lower than min, effort is MAX_VALUE
+        // If equals to zero it is a wall, so it must have +INF
+        if(flightLimits.getValue() <= radar[agent+x][agent+y] || flightLimits.getKey() >= radar[agent+x][agent+y] || radar[agent+x][agent+y] == 0) {
+            effort = Integer.MAX_VALUE;
+        }
+        
 
 
         return effort;
@@ -582,14 +605,18 @@ public class Agent extends SuperAgent implements Observable{
         try{
             ACLMessage newIn = this.receiveACLMessage();
             JsonObject injson = Json.parse(newIn.getContent()).asObject();
+            
+            
 
             if(injson != null){
+                System.out.println("\nINJSON ES NULL -> PINTAR TRAZA");
                 return traceProcess();
             }
             return false;
 
         } catch (InterruptedException ex){
             System.err.println("Error");
+            ex.printStackTrace();
             return false;
         }
     }
@@ -618,7 +645,8 @@ public class Agent extends SuperAgent implements Observable{
             System.out.println("Traza guardada");
             return true;
         } catch (InterruptedException | IOException ex) {
-            Logger.getLogger(Agent.class.getName()).log(Level.SEVERE, null, ex);
+            ex.printStackTrace();
+            logout();
         }
         return false;
     }
@@ -636,7 +664,7 @@ public class Agent extends SuperAgent implements Observable{
                 return false;
             }
             JsonObject responseJson = Json.parse(response).asObject();
-            //System.out.println("\nRESPONSE JSON LOGIN: " + responseJson.toString());
+            System.out.println("\nRESPONSE JSON LOGIN: " + responseJson.toString());
             JsonValue resultValue = responseJson.get("result");
             JsonValue keyValue = responseJson.get("key");
             JsonValue dimxValue = responseJson.get("dimx");
@@ -674,6 +702,7 @@ public class Agent extends SuperAgent implements Observable{
                 return false;
             }
         } catch (InterruptedException ex) {
+            ex.printStackTrace();
             return false;
         }
     }
@@ -703,13 +732,20 @@ public class Agent extends SuperAgent implements Observable{
                 System.out.println("> MOVE \""+act+"\"");
                 sendAction(act);
             } catch (InterruptedException ex) {
-                Logger.getLogger(Agent.class.getName()).log(Level.SEVERE, null, ex);
+                ex.printStackTrace();
             } catch (Exception ex) {
+                ex.printStackTrace();
                 break;
             }
 
         }while(checkStatus() && !isGoal() && !statusProperty.get().equals(WindowController.Status.STOP));
         System.out.println("> LOGOUT");
+        if(isGoal()){
+            System.out.println("> HAGO LOGOUT PORQUE ESTOY EN EL GOAL\n");
+        }
+        else{
+            System.out.println("> HAGO LOGOUT PORQUE EL CHECKSTATUS\n");
+        }
         logout();
         Platform.runLater(()->statusProperty.set(WindowController.Status.STOP));
     }
