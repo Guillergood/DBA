@@ -394,29 +394,21 @@ public class Agent extends SuperAgent implements Observable{
 
             // El código va a estar feo pero si funciona se pone bonito después
             int[] angleValue = new int[8];
-
-            
-            // EL ERROR ESTÁ AQUÍ
             
             // Los de al lado
-            angleValue[(octant + 1) % angleValue.length] += 1;
-            angleValue[(octant - 1) % angleValue.length] += 1;
+            angleValue[mod((octant + 1), angleValue.length)] = 2;
+            angleValue[mod((octant - 1), angleValue.length)] = 2;
 
             // Los otros
-            angleValue[(octant + 2) % angleValue.length] += 2;
-            angleValue[(octant - 2) % angleValue.length] += 2;
+            angleValue[mod((octant + 2), angleValue.length)] = 4;
+            angleValue[mod((octant - 2), angleValue.length)] = 4;
 
             // Los otros otros
-            angleValue[(octant + 3) % angleValue.length] += 3;
-            angleValue[(octant - 3) % angleValue.length] += 3;
+            angleValue[mod((octant + 3), angleValue.length)] = 6;
+            angleValue[mod((octant - 3), angleValue.length)] = 6;
             
             // El opuesto
-            angleValue[(octant + 4) % angleValue.length] += 4;
-            
-            // PERO NO DESPUÉS DE AQUÍ
-            
-            for (int i : angleValue)
-                System.out.println(i);
+            angleValue[mod((octant + 4), angleValue.length)] = 8;
 
             // Moves to evaluate:
             ArrayList<Pair> possibleMoves = new ArrayList();
@@ -428,11 +420,6 @@ public class Agent extends SuperAgent implements Observable{
             possibleMoves.add(new Pair(Command.MOVE_SW, evaluate(-1, 1) + angleValue[5]));
             possibleMoves.add(new Pair(Command.MOVE_W, evaluate(-1, 0) + angleValue[6]));
             possibleMoves.add(new Pair(Command.MOVE_NW, evaluate(-1, -1) + angleValue[7]));
-            
-            // La wena depuración:
-            for(Pair p : possibleMoves) {
-                System.out.println(p);
-            }
 
             final Comparator comp = (o1, o2) -> {
                 Pair<Command, Integer> o1Pair = (Pair) o1;
@@ -443,7 +430,6 @@ public class Agent extends SuperAgent implements Observable{
             possibleMoves.sort(comp);
 
             Command chosen = (Command)possibleMoves.get(0).getKey();
-            System.out.println("THE CHOSEN ONE:" + chosen);
             
             if (above(chosen))
                 move = Command.MOVE_UP;
@@ -454,7 +440,26 @@ public class Agent extends SuperAgent implements Observable{
         return move;
     }
 
-
+    /**
+     * Module operation
+     * Because % in Java does not take negative values into account and we need it
+     * @param i int value
+     * @param j another int value
+     * @return  the result of the operation
+     */
+    public int mod(int i, int j)
+    {
+        int rem = i % j;
+        
+        if ((j < 0 && rem > 0) || (j > 0 && rem < 0))
+        {
+            rem += j;
+        }
+        
+        return rem;
+    }
+    
+    
     /**
      * <p>Evaluates vertical effort to reach a certain (nearby) place</p>
      * The place must be detected in the elevation and radar sensors.
@@ -476,13 +481,14 @@ public class Agent extends SuperAgent implements Observable{
 
         // RADAR: if height exceeds max or is lower than min, effort is MAX_VALUE
         if(flightLimits.getValue() <= radar[agent+x][agent+y] || flightLimits.getKey() >= radar[agent+x][agent+y]) {
-            effort = Integer.MAX_VALUE;
+            return 8000;
         }
 
         // ELEVATION: check elevation and calculate how many moves needed to reach
         // the place if it is above the agent
         if(elevation[agent+x][agent+y]/moveUnit < 0)
-            effort += Math.abs(elevation[agent+x][agent+y]/moveUnit);
+            //effort += Math.abs(elevation[agent+x][agent+y]/moveUnit);
+            ++effort;
 
 
         return effort;
@@ -685,6 +691,10 @@ public class Agent extends SuperAgent implements Observable{
         System.out.println();
         System.out.println("> LOGIN");
         if(!login()) return;
+        
+        // Test only
+        int move = 0;
+        
         do
         {         
             //System.out.println("> UPDATE PERCEPTION");
@@ -700,7 +710,7 @@ public class Agent extends SuperAgent implements Observable{
 
                 // Choose next movement
                 Command act = chooseMovement();
-                System.out.println("> MOVE \""+act+"\"");
+                System.out.println("> MOVE " + (move++) + ": " + act);
                 sendAction(act);
             } catch (InterruptedException ex) {
                 Logger.getLogger(Agent.class.getName()).log(Level.SEVERE, null, ex);
