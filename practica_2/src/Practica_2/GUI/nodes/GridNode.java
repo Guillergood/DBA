@@ -30,7 +30,7 @@ import javafx.scene.paint.Color;
 
 /**
  *
- * @author brbco
+ * @author Bruno Garcia
  */
 public class GridNode extends ScrollPane implements Observer<Agent>{
     private final int numCols,numRows;

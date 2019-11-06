@@ -226,40 +226,39 @@ public class Agent extends SuperAgent implements Observable{
         JsonObject perceptionObject;
         perceptionObject = Json.parse(source).asObject();
         JsonObject object = perceptionObject.get("perceptions").asObject();
-        //object = Json.parse(source).asObject();
-
-        System.out.println("\nperceptionObject: " + perceptionObject);
-        System.out.println("\nobject: " + object);
-
+        
+        //System.out.println("\nperceptionObject: " + perceptionObject);
+        //System.out.println("\nobject: " + object);
+        
         if(object.get("gps") != null){
-            System.out.println("\nGPS cogido");
+            //System.out.println("\nGPS cogido");
             gps.set(object.get("gps").asObject().get("x").asInt(),object.get("gps").asObject().get("y").asInt(),object.get("gps").asObject().get("z").asInt());
-            System.out.println("\nGPS es: "+ gps.toString());
+            //System.out.println("\nGPS es: "+ gps.toString());
         }
 
         if(object.get("fuel") != null){
-            System.out.println("\nFUEL cogido");
+            //System.out.println("\nFUEL cogido");
             fuel = object.get("fuel").asDouble();
-            System.out.println("\nFUEL es: "+ fuel);
+            //System.out.println("\nFUEL es: "+ fuel);
         }
 
         if(object.get("radar") != null){
-            System.out.println("\nRADAR cogido");
+            //System.out.println("\nRADAR cogido");
             radarTemp = object.get("radar").asArray();
             radarBool = true;
-            System.out.println("\nRADAR es: "+ radarTemp + " " + radarBool);
+            //System.out.println("\nRADAR es: "+ radarTemp + " " + radarBool);
         }
         if(object.get("elevation") != null){
-            System.out.println("\nELEVATION cogido");
+            //System.out.println("\nELEVATION cogido");
             elevationTemp = object.get("elevation").asArray();
             elevationBool=true;
-            System.out.println("\nELEVATION es: "+ elevationTemp + " " + elevationBool);
+            //System.out.println("\nELEVATION es: "+ elevationTemp + " " + elevationBool);
         }
         if(object.get("magnetic") != null){
-            System.out.println("\nMAGNETIC cogido");
+            //System.out.println("\nMAGNETIC cogido");
             magneticTemp = object.get("magnetic").asArray();
             magneticBool = true;
-            System.out.println("\nMAGNETIC es: "+ magneticTemp + " " + magneticBool);
+            //System.out.println("\nMAGNETIC es: "+ magneticTemp + " " + magneticBool);
         }
         if(object.get("goal") != null){
             goal = object.get("goal").asBoolean();
@@ -319,11 +318,16 @@ public class Agent extends SuperAgent implements Observable{
         activeSensors.forEach((String key,Boolean value) -> jsonMsg.add(key, value));
         jsonMsg.add("user", Main.USER);
         jsonMsg.add("password", Main.PASSWORD);
-        System.out.println(jsonMsg.toString());
+        //System.out.println(jsonMsg.toString());
         sendMsg(jsonMsg.toString());
         return checkStatus();
-    }
-
+    }   
+    
+    /**
+     * <p> Try get the perceptions from controller and save it on internals vars. </p>
+     * @author Bruno Garcia
+     * @return true, if is the operation successful.
+     */
     private boolean updatePerception(){
         try {
             String perception_str = getMsg();
@@ -592,7 +596,7 @@ public class Agent extends SuperAgent implements Observable{
 
     private boolean traceProcess(){
         try {
-            System.out.println("Recibiendo traza");
+            //System.out.println("Recibiendo traza");
             ACLMessage newIn = this.receiveACLMessage();
             JsonObject injson = Json.parse(newIn.getContent()).asObject();
 
@@ -661,7 +665,7 @@ public class Agent extends SuperAgent implements Observable{
 
             if (resultValue.asString().equals("ok"))
             {
-                System.out.println("> STATUS OK");
+                //System.out.println("> STATUS OK");
                 return true;
             }
             else
@@ -682,8 +686,8 @@ public class Agent extends SuperAgent implements Observable{
         System.out.println("> LOGIN");
         if(!login()) return;
         do
-        {
-            System.out.println("> UPDATE PERCEPTION");
+        {         
+            //System.out.println("> UPDATE PERCEPTION");
             if(!updatePerception())
                 break;
             
@@ -724,7 +728,7 @@ public class Agent extends SuperAgent implements Observable{
                 aux_s.acquire();
                 long end_time = System.currentTimeMillis();
                 long difference = end_time-start_time;
-                System.out.println("Redraw time(ms): "+difference);
+                //System.out.println("Redraw time(ms): "+difference);
                 if(difference<25)
                     Thread.sleep(25-difference);
                 agentIsProcesingProperty.set(false);
@@ -745,7 +749,7 @@ public class Agent extends SuperAgent implements Observable{
                     data[1] = flightLimits;
                     data[2] = radar;
                     data[3] = magnetic;
-                    //Pair<Vec3d,int[][]> data = new Pair(this.gps,this.radar);
+                    
                     observer.update(this, data);
                 }     
                 else if(observer instanceof MapNode)

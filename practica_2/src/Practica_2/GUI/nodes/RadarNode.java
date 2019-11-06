@@ -14,7 +14,7 @@ import javafx.util.Pair;
 
 /**
  *
- * @author brbco
+ * @author Bruno Garcia
  */
 public class RadarNode extends GridNode{    
     public RadarNode() {

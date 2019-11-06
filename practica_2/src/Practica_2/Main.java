@@ -15,6 +15,7 @@ import javafx.stage.Stage;
 /**
  *
  * @author Guillermo
+ * @author Bruno Garcia
  */
 public class Main extends Application{
     static final int PREFERRED_WIDTH = 650;
