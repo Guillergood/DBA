@@ -193,7 +193,7 @@ public class WindowController implements Initializable {
 
     private void addContent(){
         container.getChildren().clear();
-        
+        /*
         SplitPane pane = new SplitPane(mapNode,radarNode);
         pane.orientationProperty().set(Orientation.HORIZONTAL);
         pane.getStyleClass().add("split-pane-h");
@@ -202,8 +202,8 @@ public class WindowController implements Initializable {
         AnchorPane.setBottomAnchor(pane, 0d);
         AnchorPane.setLeftAnchor(pane, 0d);
         AnchorPane.setRightAnchor(pane, 0d);        
-        
-        container.getChildren().add(pane);
+        */
+        container.getChildren().add(mapNode);
         //container.getChildren().add(radarNode);  
     }
     
@@ -212,7 +212,7 @@ public class WindowController implements Initializable {
             Agent gb_agent = Main.getAgent(cb_map.getValue());
             gb_agent.statusProperty.bindBidirectional(statusProperty);  
             gb_agent.agentIsProcesingProperty.bindBidirectional(agentIsProcesingProperty);            
-            gb_agent.addOvserver(radarNode);
+            //gb_agent.addOvserver(radarNode);
             gb_agent.addOvserver(mapNode);
             step = () -> {gb_agent.nextStep();};
             Thread t = new Thread(() -> {gb_agent.execute();});
