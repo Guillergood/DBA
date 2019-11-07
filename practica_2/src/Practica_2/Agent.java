@@ -355,10 +355,8 @@ public class Agent extends SuperAgent implements Observable{
 
         // Return value
         Command move;
-        globalMap[(int)gps.x][(int)gps.y]+=1;
-        System.out.println("SUMANDO EN: ["+(int)gps.x+"]"+"["+(int)gps.y+"] = "+globalMap[(int)gps.x][(int)gps.y]);
-        
-        
+        ++globalMap[(int)gps.x][(int)gps.y];
+        System.out.println("SUMANDO EN: [" + (int)gps.x + "]" + "[" + (int)gps.y + "] = " + globalMap[(int)gps.x][(int)gps.y]);
 
         // Primero, si alguna de las casillas de alrededor muestra fuel warning,
         // la acción es bajar y si está en el suelo repostar.
@@ -399,19 +397,19 @@ public class Agent extends SuperAgent implements Observable{
             int[] angleValue = new int[8];
             
             // Los de al lado
-            angleValue[mod((octant + 1), angleValue.length)] = 2;
-            angleValue[mod((octant - 1), angleValue.length)] = 2;
+            angleValue[mod((octant + 1), angleValue.length)] = 1;
+            angleValue[mod((octant - 1), angleValue.length)] = 1;
 
             // Los otros
-            angleValue[mod((octant + 2), angleValue.length)] = 4;
-            angleValue[mod((octant - 2), angleValue.length)] = 4;
+            angleValue[mod((octant + 2), angleValue.length)] = 2;
+            angleValue[mod((octant - 2), angleValue.length)] = 2;
 
             // Los otros otros
-            angleValue[mod((octant + 3), angleValue.length)] = 6;
-            angleValue[mod((octant - 3), angleValue.length)] = 6;
+            angleValue[mod((octant + 3), angleValue.length)] = 3;
+            angleValue[mod((octant - 3), angleValue.length)] = 3;
             
             // El opuesto
-            angleValue[mod((octant + 4), angleValue.length)] = 8;
+            angleValue[mod((octant + 4), angleValue.length)] = 4;
 
             // Moves to evaluate:
             ArrayList<Pair> possibleMoves = new ArrayList();
@@ -492,12 +490,9 @@ public class Agent extends SuperAgent implements Observable{
         
         //System.out.println("GLOBAL["+(int)(gps.x+x)+"]"+"["+(int)(gps.y+y)+"] = "+globalMap[(int)(gps.x+x)][(int)(gps.y+y)]);
 
-        
-        if(coordenadaX > 0 && coordenadaX < maxX && coordenadaY > 0 && coordenadaX < maxY ){
-            if(globalMap[coordenadaX][coordenadaY] > 0 ){
-                return 8000;
-            }
-        }
+        if(coordenadaX >= 0 && coordenadaX <= maxX && coordenadaY >= 0 && coordenadaY <= maxY)
+            effort += globalMap[coordenadaX][coordenadaY];
+
         // RADAR: if height exceeds max or is lower than min, effort is MAX_VALUE
         if(flightLimits.getValue() <= radar[agent+x][agent+y] || 
                 flightLimits.getKey() >= radar[agent+x][agent+y] ) {
@@ -684,15 +679,6 @@ public class Agent extends SuperAgent implements Observable{
                 maxY = dimyValue.asInt();
                 this.mapSize = new Pair(maxX,maxY);
                 globalMap = new int[maxX+1][maxY+1];
-                
-                // Footprints map initialized to 0
-                footprints = new int[mapSize.getKey()][mapSize.getValue()];
-
-                for(int i = 0; i < mapSize.getKey(); ++i) {
-                    for(int j = 0; j < mapSize.getValue(); ++j) {
-                        footprints[i][j] = 0;
-                    }
-                }
             }
             
             if(minValue != null && maxValue!= null)
@@ -734,9 +720,6 @@ public class Agent extends SuperAgent implements Observable{
             try {
                 if(statusProperty.get().equals(WindowController.Status.PAUSE))
                     lock.acquire();
-
-                // Register footprint
-                ++footprints[(int)gps.x][(int)gps.y];
 
                 // Choose next movement
                 Command act = chooseMovement();
