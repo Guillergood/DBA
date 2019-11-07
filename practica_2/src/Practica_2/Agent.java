@@ -43,15 +43,15 @@ public class Agent extends SuperAgent implements Observable{
     private int[][] magnetic = new int[11][11];
     private int[][] elevation = new int[11][11];
     private Pair<Float,Float> gonio;
-    private static Object globalMap;
+    private static int [][] globalMap;
     private boolean status;
     private boolean goal;
     private ArrayList<Vec3d> trace;
     private final String id;
     private String key;
     // World dimensions
-    private int min;
-    private int max;;
+    private int maxY;
+    private int maxX;
     // Footprint map
     private int footprints[][];
     //OnRefuel mode
@@ -355,6 +355,10 @@ public class Agent extends SuperAgent implements Observable{
 
         // Return value
         Command move;
+        globalMap[(int)gps.x][(int)gps.y]+=1;
+        System.out.println("SUMANDO EN: ["+(int)gps.x+"]"+"["+(int)gps.y+"] = "+globalMap[(int)gps.x][(int)gps.y]);
+        
+        
 
         // Primero, si alguna de las casillas de alrededor muestra fuel warning,
         // la acción es bajar y si está en el suelo repostar.
@@ -482,10 +486,21 @@ public class Agent extends SuperAgent implements Observable{
         // Length of a move
         int moveUnit = 5;
         
+        int coordenadaX = (int)(gps.x+x);
+        int coordenadaY = (int)(gps.y+y);
         
+        
+        //System.out.println("GLOBAL["+(int)(gps.x+x)+"]"+"["+(int)(gps.y+y)+"] = "+globalMap[(int)(gps.x+x)][(int)(gps.y+y)]);
 
+        
+        if(coordenadaX > 0 && coordenadaX < maxX && coordenadaY > 0 && coordenadaX < maxY ){
+            if(globalMap[coordenadaX][coordenadaY] > 0 ){
+                return 8000;
+            }
+        }
         // RADAR: if height exceeds max or is lower than min, effort is MAX_VALUE
-        if(flightLimits.getValue() <= radar[agent+x][agent+y] || flightLimits.getKey() >= radar[agent+x][agent+y]) {
+        if(flightLimits.getValue() <= radar[agent+x][agent+y] || 
+                flightLimits.getKey() >= radar[agent+x][agent+y] ) {
             return 8000;
         }
 
@@ -642,6 +657,7 @@ public class Agent extends SuperAgent implements Observable{
     /**
      * <p> Check if last message was successful </p>
      * @author Bruno Garcia
+     * @author Guillermo Bueno
      * @return the status with controller
      */
     private boolean checkStatus(){
@@ -663,8 +679,11 @@ public class Agent extends SuperAgent implements Observable{
             if(keyValue != null)            
                 this.key = keyValue.asString(); 
             
-            if(dimxValue != null && dimyValue != null) { 
-                this.mapSize = new Pair(dimxValue.asInt(),dimyValue.asInt());
+            if(dimxValue != null && dimyValue != null) {
+                maxX = dimxValue.asInt();
+                maxY = dimyValue.asInt();
+                this.mapSize = new Pair(maxX,maxY);
+                globalMap = new int[maxX+1][maxY+1];
                 
                 // Footprints map initialized to 0
                 footprints = new int[mapSize.getKey()][mapSize.getValue()];
