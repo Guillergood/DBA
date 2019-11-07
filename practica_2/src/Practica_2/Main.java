@@ -31,7 +31,9 @@ public class Main extends Application{
      */
     public static void main(String[] args) {
         AgentsConnection.connect("isg2.ugr.es", 6000, VHOST, USER, PASSWORD, false);
-        launch(args);
+        Agent agent = Main.getAgent(Agent.Maps.MAP1);
+        agent.execute();
+        //launch(args);
     }
 
     @Override

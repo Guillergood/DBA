@@ -338,7 +338,7 @@ public class Agent extends SuperAgent implements Observable{
                 return false;
 
             sensorsParser(perception_str);
-            this.notifyObservers();
+            //this.notifyObservers();
             return true;
         } catch (InterruptedException ex) {
             return false;
@@ -715,8 +715,8 @@ public class Agent extends SuperAgent implements Observable{
                 break;
             
             try {
-                if(statusProperty.get().equals(WindowController.Status.PAUSE))
-                    lock.acquire();
+                //if(statusProperty.get().equals(WindowController.Status.PAUSE))
+                //    lock.acquire();
 
                 // Register footprint
                 ++footprints[(int)gps.x][(int)gps.y];
@@ -732,7 +732,7 @@ public class Agent extends SuperAgent implements Observable{
                 break;
             }
 
-        }while(checkStatus() && !isGoal() && !statusProperty.get().equals(WindowController.Status.STOP));
+        }while(checkStatus() && !isGoal());
         System.out.println("> LOGOUT");
         if(isGoal()){
             System.out.println("> HAGO LOGOUT PORQUE ESTOY EN EL GOAL\n");
@@ -741,7 +741,7 @@ public class Agent extends SuperAgent implements Observable{
             System.out.println("> HAGO LOGOUT PORQUE EL CHECKSTATUS\n");
         }
         logout();
-        Platform.runLater(()->statusProperty.set(WindowController.Status.STOP));
+        //Platform.runLater(()->statusProperty.set(WindowController.Status.STOP));
     }
 
     @Override
