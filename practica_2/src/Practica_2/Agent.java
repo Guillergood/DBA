@@ -463,7 +463,7 @@ public class Agent extends SuperAgent implements Observable{
                     inRowMomevents.clear();
             }
             
-            if(inRowMomevents.size() == 6){
+            if(inRowMomevents.size() == 7){
                 int sum = 0;
                 System.out.println("|||||||||||||||||||||||||||||||");
                 for(int i = -1; i < 2; i++){
