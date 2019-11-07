@@ -25,24 +25,29 @@ public class RadarNode extends GridNode{
     public void update(Agent o, Object data) {
         Object parsedData[] = (Object[]) data;
         Vec3d gps = (Vec3d) parsedData[0];
+        double fuel = (double) parsedData[4];
         Pair<Integer,Integer> flightLimits = (Pair<Integer,Integer>) parsedData[1];
         String gps_str = (gps==null)?"offline":
                 "{"+gps.x+", "+gps.y+", "+gps.z+"}";
         int[][] radar = (int[][]) parsedData[2];        
         int[][] magnetic = (int[][]) parsedData[3];        
         
+        this.clear();
         for (int i = 0; i < 11; i++) {
             for (int j = 0; j < 11; j++) {
                 int value = radar[i][j];
                 Label label = new Label(""+value);
-                if(value>=flightLimits.getValue())
-                    label.setStyle("-fx-background-color: darkred");
-                if(value>flightLimits.getValue() && value<flightLimits.getValue() && value>gps.z)
-                    label.setStyle("-fx-background-color: red");
+                if(value>flightLimits.getValue() || value<flightLimits.getKey())
+                {
+                    label.setStyle("-fx-font-weight: bold;"); 
+                    label.setTextFill(Color.DARKRED);
+                }                   
+                else if(value>gps.z)
+                    label.setTextFill(Color.RED);
                
                 if(i==5 && j==5)
                 {
-                    String str_tp = String.format("Agent GPS: %s\nMap Height: %d",gps_str,value);
+                    String str_tp = String.format("Agent GPS: %s\nFuel: %s%%\nMap Height: %d",gps_str,fuel,value);
                     if(gps!=null)
                     {
 
@@ -59,7 +64,7 @@ public class RadarNode extends GridNode{
                 else if(magnetic[i][j]!=0)
                     this.setCell(i, j, label, new Tooltip("<goal>\nHeight: "+value), Color.YELLOW,Color.LIGHTYELLOW);
                 else
-                    this.setCell(i, j, label, new Tooltip(""+value), Color.LIGHTGRAY,Color.web("#e7e7e7"));
+                    this.setCell(i, j, label, null, Color.LIGHTGRAY);
             }
         }
         

@@ -203,7 +203,7 @@ public class GridNode extends ScrollPane implements Observer<Agent>{
                             4000 
                     );
                 }
-            });
+            });        
         
         this.gridPane.add(pane, i, j);        
     }
@@ -244,5 +244,9 @@ public class GridNode extends ScrollPane implements Observer<Agent>{
     
     private static interface IsHoverMethod{
         void invoke(Boolean isHover,Node container);    
+    }
+    
+    public void clear(){
+        this.gridPane.getChildren().clear();
     }
 }
