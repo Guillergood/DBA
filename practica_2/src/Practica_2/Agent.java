@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -49,6 +50,9 @@ public class Agent extends SuperAgent implements Observable{
     private ArrayList<Vec3d> trace;
     private final String id;
     private String key;
+    // Circle Breaker
+    HashSet<Command> inRowMomevents = new HashSet<>();
+    Command lastMovement = Command.REFUEL;
     // World dimensions
     private int maxY;
     private int maxX;
@@ -441,8 +445,49 @@ public class Agent extends SuperAgent implements Observable{
                 move = Command.MOVE_UP;
             else
                 move = chosen;
+            
+            if(move != Command.REFUEL && Command.MOVE_DW != move && Command.MOVE_UP != move &&
+                    lastMovement != Command.REFUEL && Command.MOVE_DW != lastMovement && Command.MOVE_UP != lastMovement){
+                
+                
+                int prev = move.ordinal()-1;
+                if(prev < 0){
+                    prev = 7;
+                }
+                
+                Command prevNeighboor = Command.values()[prev % 8];
+                Command nextNeighboor = Command.values()[(move.ordinal()+1) % 8];
+                if(nextNeighboor == lastMovement || prevNeighboor == lastMovement)
+                    inRowMomevents.add(move);
+                else if (lastMovement != move)
+                    inRowMomevents.clear();
+            }
+            
+            if(inRowMomevents.size() == 6){
+                int sum = 0;
+                System.out.println("|||||||||||||||||||||||||||||||");
+                for(int i = -1; i < 2; i++){
+                    for(int k = -1; k < 2; k++){
+                        int coordenateX = (int)(gps.x+i);
+                        int coordenateY = (int)(gps.y+k);
+                        if(coordenateX > 0 && coordenateX < maxX && coordenateY > 0 && coordenateY < maxY ) {
+                            sum+=footprints[coordenateX][coordenateY];
+                            System.out.println("GLOBAL["+coordenateX+"]"+"["+coordenateY+"] -> " + footprints[coordenateX][coordenateY]);
+                        }
+                    }
+                }
+                System.out.println("|||||||||||||||||||||||||||||||");
+                if(sum >= 3){
+                    System.out.println("CICLO, SALIENDO");
+                    goal = true;
+                }
+                
+            }
+  
+            
+           
         }
-
+        lastMovement = move;
         return move;
     }
 
@@ -486,15 +531,16 @@ public class Agent extends SuperAgent implements Observable{
         // Length of a move
         int moveUnit = 5;
         
-        int coordenadaX = (int)(gps.x+x);
-        int coordenadaY = (int)(gps.y+y);
+        int coordenateX = (int)(gps.x+x);
+        int coordenateY = (int)(gps.y+y);
+        //int actual = globalMap[(int)(gps.x)][(int)(gps.y)];
         
         
         //System.out.println("GLOBAL["+(int)(gps.x+x)+"]"+"["+(int)(gps.y+y)+"] = "+globalMap[(int)(gps.x+x)][(int)(gps.y+y)]);
 
         
-        if(coordenadaX > 0 && coordenadaX < maxX && coordenadaY > 0 && coordenadaX < maxY ){
-            if(globalMap[coordenadaX][coordenadaY] > 0 ){
+        if(coordenateX > 0 && coordenateX < maxX && coordenateY > 0 && coordenateY < maxY ){
+            if(globalMap[coordenateX][coordenateY] > 0 ){
                 return 8000;
             }
         }
