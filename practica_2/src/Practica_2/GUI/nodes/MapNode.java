@@ -14,8 +14,6 @@ import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
-import javafx.event.EventHandler;
-import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
@@ -24,12 +22,8 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.FlowPane;
-import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.util.Pair;
 
@@ -132,6 +126,9 @@ public class MapNode extends ScrollPane implements Observer<Agent> {
                         drawedCells.put(pos, height);
                         if(magnetic[i][j]!=0)
                             fillCell(x,y,gc,Color.YELLOW);
+                        else if(radar[i][j]<colorLerpLimits.getKey() 
+                                || radar[i][j]>colorLerpLimits.getValue())
+                            fillCell(x,y,gc,Color.RED);
                         else
                             fillCell(x,y,gc,height);
                     }catch(IndexOutOfBoundsException ex){
