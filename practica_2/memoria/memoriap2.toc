@@ -1,0 +1,5 @@
+\babel@toc {spanish}{}
+\contentsline {section}{\numberline {1}Descripción del problema}{4}{section.1}% 
+\contentsline {section}{\numberline {2}Diseño del agente}{4}{section.2}% 
+\contentsline {section}{\numberline {3}Lógica del agente}{4}{section.3}% 
+\contentsline {section}{\numberline {4}Resultados observados}{5}{section.4}% 
