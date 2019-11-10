@@ -313,7 +313,8 @@ public class Agent extends SuperAgent implements Observable{
     private boolean login(){
         JsonObject jsonMsg = new JsonObject();
         jsonMsg.add("command", "login");
-        jsonMsg.add("map", map.toJsonValue());
+        //jsonMsg.add("map", map.toJsonValue());
+        jsonMsg.add("map", "winteriscoming");
         activeSensors.forEach((String key,Boolean value) -> jsonMsg.add(key, value));
         jsonMsg.add("user", Main.USER);
         jsonMsg.add("password", Main.PASSWORD);
@@ -494,8 +495,8 @@ public class Agent extends SuperAgent implements Observable{
             effort += globalMap[coordenadaX][coordenadaY];
 
         // RADAR: if height exceeds max or is lower than min, effort is MAX_VALUE
-        if(flightLimits.getValue() <= radar[agent+x][agent+y] || 
-                flightLimits.getKey() >= radar[agent+x][agent+y] ) {
+        if(flightLimits.getValue() < radar[agent+x][agent+y] || 
+                flightLimits.getKey() > radar[agent+x][agent+y] ) {
             return 8000;
         }
 
