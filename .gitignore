@@ -1,7 +1,8 @@
-**/nbproject/private/
-**/nbproject/Makefile-*.mk
-**/nbproject/Package-*.bash
-**/nbproject/*.properties
+/practica_2
+/Practica_3/nbproject/private/
+/Practica_3/nbproject/Makefile-*.mk
+/Practica_3/nbproject/Package-*.bash
+/Practica_3/nbproject/*.properties
 build/
 nbbuild/
 dist/
