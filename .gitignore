@@ -1,1 +1,10 @@
-/practica_2/nbproject/private/
+/practica_2
+/Practica_3/nbproject/private/
+/Practica_3/nbproject/Makefile-*.mk
+/Practica_3/nbproject/Package-*.bash
+/Practica_3/nbproject/*.properties
+build/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
