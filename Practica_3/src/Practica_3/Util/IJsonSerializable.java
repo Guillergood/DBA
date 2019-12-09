@@ -3,12 +3,13 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package Practica_3;
+package Practica_3.Util;
 
 /**
  *
- * @author Guillermo
+ * @author Bruno García Trípoli
  */
-public class Agent {
-    
+public interface IJsonSerializable {
+    public String getName();
+    public String getJsonValue();
 }
