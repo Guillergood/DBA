@@ -3,12 +3,16 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package Practica_3;
+package Practica_3.Main;
 
 /**
  *
- * @author Guillermo
+ * @author Bruno García Trípoli
  */
-public class Main {
-    
+public class VisitorMain {
+    /**
+     * @param args the command line arguments
+     */
+    public static void main(String[] args) {
+    }
 }
