@@ -17,11 +17,15 @@ public class Gonio {
         this.distance = distance;
         this.angle = angle;
     }
+    //TODO no es necesario puesto que arriba siempre se inicializa, asi que no
+    //es necesario comprobar que está vacio.
+    /*public boolean isEmpty(){
+        return ;
+    }*/
+
+    @Override
+    public String toString() {
+        return "Gonio{" + "distance=" + distance + ", angle=" + angle + '}';
+    }
     
-    public boolean isEmpty(){
-        
-    }
-    public String toString(){
-        
-    }
 }

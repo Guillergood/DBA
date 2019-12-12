@@ -22,21 +22,21 @@ public class AwacPart {
         
     }
     public double getX(){
-        
+        return vecPos.x;
     }
     public double getY(){
-        
+        return vecPos.y;
     }
     public double getZ(){
-        
+        return vecPos.z;
     }
     public boolean isRemote(){
         
     }
-    
-    
-    public String toString(){
-        
+
+    @Override
+    public String toString() {
+        return "AwacPart{" + "agent_name=" + agent_name + ", agent_type=" + agent_type + ", vecPos=" + vecPos + ", direction=" + direction + '}';
     }
     
 }

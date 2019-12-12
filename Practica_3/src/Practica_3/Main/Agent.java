@@ -11,6 +11,7 @@ import Practica_3.Util.Gonio;
 import Practica_3.Util.Matrix;
 import com.sun.javafx.geom.Vec3d;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -43,19 +44,38 @@ public abstract class Agent {
         
         public final String display_name;
         public final String json_value;
-        private static final Map<String,AgentType> NAME_LOOKUP;
+        private static final HashMap<String,AgentType> NAME_LOOKUP = new HashMap<String, AgentType>();
         
         AgentType(String display_name, String json_value){
             this.display_name = display_name;
             this.json_value = json_value;
-            
+            initializeTableLookup();
         }
+        
+        private static void initializeTableLookup(){
+            NAME_LOOKUP.put("rescue", RESCUE);
+            NAME_LOOKUP.put("fly", FLY);
+            NAME_LOOKUP.put("sparrow", SPARROW);
+            NAME_LOOKUP.put("hawk", HAWK);
+        }
+        
         public static AgentType parse(String name){
+            AgentType type;
+            name = name.toLowerCase();
+           
+            type = NAME_LOOKUP.get(name);
+            if(type == null)
+                throw new RuntimeException("Unsupported drone type.");
             
-        }
-        public String toString(){
             
+            return type;
         }
+
+        @Override
+        public String toString() {
+            return "AgentType{" + "display_name=" + display_name + ", json_value=" + json_value + '}';
+        }
+        
     }
     public enum Status{
         IDLE, EXPLORING, EXPLORING_PLACE, GOING_RESCUE, GOING_HOME;
