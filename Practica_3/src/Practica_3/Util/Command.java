@@ -50,8 +50,8 @@ public enum Command implements IStringSerializable,IJsonSerializable{
     }   
     
     public static String[] getDisplayNames(){
-        int lenght = NAME_LOOKUP.keySet().size();
-        String[] arr = NAME_LOOKUP.keySet().toArray(new String[lenght]);
+        int length = NAME_LOOKUP.keySet().size();
+        String[] arr = NAME_LOOKUP.keySet().toArray(new String[length]);
         Arrays.sort(arr);
         return arr;
     }
@@ -289,7 +289,7 @@ public enum Command implements IStringSerializable,IJsonSerializable{
         public Direction rotateYCCW() {
           if(!Direction.Plane.HORIZONTAL.test(this))
                return this;
-           int lenght = Direction.BY_HORIZONTAL_INDEX.length;
+           int length = Direction.BY_HORIZONTAL_INDEX.length;
            return Direction.byHorizontalIndex(this.horizontalIndex-1);
         }
 
