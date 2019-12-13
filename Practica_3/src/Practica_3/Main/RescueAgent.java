@@ -16,8 +16,8 @@ public class RescueAgent extends Agent{
     private static List<Vec3d> targetList;
     private Vec3d bestTarget;
     
-    public RescueAgent(int id, double fuel_limit, Vec3d init_pos){
-        
+    public RescueAgent(String id, float fuel_limit, Vec3d init_pos) throws Exception {
+        super(id, AgentType.FLY, fuel_limit, init_pos);
     }
     private void updateTargets() {
         

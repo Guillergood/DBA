@@ -6,10 +6,12 @@
 package Practica_3.Main;
 
 
+import DBA.SuperAgent;
 import Practica_3.Util.AwacPart;
 import Practica_3.Util.Gonio;
 import Practica_3.Util.Matrix;
 import com.sun.javafx.geom.Vec3d;
+import es.upv.dsic.gti_ia.core.AgentID;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,9 +21,9 @@ import java.util.Map;
  *
  * @author Alberto
  */
-public abstract class Agent {
+public abstract class Agent extends SuperAgent {
     private List<String> GroupAgent;
-    protected final Matrix<Integer> MAP_HEIGHT;
+    protected Matrix<Integer> MAP_HEIGHT;
     protected Matrix<Double> map_explored;
     private final AgentType agent_type;
     protected final float FUEL_LIMIT;
@@ -37,7 +39,17 @@ public abstract class Agent {
     private Status AgentStatus;
     
     
-    
+    /**
+     * Default constructor
+     * Initializes an agent with its basic variables
+     * @author Juan Ocaña Valenzuela
+     */
+    protected Agent(String id, AgentType type, float f_limit, Vec3d init) throws Exception {
+        super(new AgentID(id));
+        agent_type = type;
+        FUEL_LIMIT = f_limit;
+        init_pos = init;
+    }
     
     public enum AgentType{
         RESCUE, FLY, SPARROW, HAWK;
