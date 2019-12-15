@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Arch Linux) (preloaded format=pdflatex 2019.11.1)  8 NOV 2019 12:35
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Arch Linux) (preloaded format=pdflatex 2019.11.17)  2 DEC 2019 17:36
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -744,8 +744,8 @@ File: umsb.fd 2013/01/14 v3.01 AMS symbols B
 
 {/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map} <./img/logo.png
 
-pdfTeX warning: /usr/bin/pdflatex (file ./img/logo.png): large interlaced PNG m
-ight cause out of memory (use non-interlaced PNG to fix this)
+pdfTeX warning: /sbin/pdflatex (file ./img/logo.png): large interlaced PNG migh
+t cause out of memory (use non-interlaced PNG to fix this)
 >]
 LaTeX Font Info:    Trying to load font information for T1+SourceCodePro-TLF on
  input line 83.
@@ -788,29 +788,44 @@ LaTeX Font Info:    Font shape `T1/SourceSansPro-LF/b/n' will be
 LaTeX Info: Redefining \. on input line 93.
 LaTeX Info: Redefining \% on input line 93.
  [3]
-LaTeX Info: Redefining \. on input line 137.
-LaTeX Info: Redefining \% on input line 137.
+LaTeX Info: Redefining \. on input line 140.
+LaTeX Info: Redefining \% on input line 140.
  [4]
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 143.
-LaTeX Info: Redefining \. on input line 143.
-LaTeX Info: Redefining \% on input line 143.
- [5]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 143.
+<img/resultados.png, id=57, 1322.9425pt x 236.885pt>
+File: img/resultados.png Graphic file (type png)
+<use img/resultados.png>
+Package pdftex.def Info: img/resultados.png  used on input line 152.
+(pdftex.def)             Requested size: 463.03682pt x 82.91098pt.
+
+Overfull \hbox (44.78314pt too wide) in paragraph at lines 152--153
+[][] 
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 152--153
+
+ []
+
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 164.
+LaTeX Info: Redefining \. on input line 164.
+LaTeX Info: Redefining \% on input line 164.
+[5 <./img/resultados.png>]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 164.
  (./memoriap2.aux
 LaTeX Info: Redefining \. on input line 25.
 LaTeX Info: Redefining \% on input line 25.
 )
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 143.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 143.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 164.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 164.
 Package rerunfilecheck Info: File `memoriap2.out' has not changed.
 (rerunfilecheck)             Checksum: 0107D8AE4209EF6AFC7FE3CFE1D7332F;228.
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 143.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 164.
  ) 
 Here is how much of TeX's memory you used:
- 12064 strings out of 492167
- 178729 string characters out of 6131558
+ 12074 strings out of 492167
+ 178904 string characters out of 6131557
  285682 words of memory out of 5000000
- 16203 multiletter control sequences out of 15000+600000
+ 16210 multiletter control sequences out of 15000+600000
  86690 words of font info for 56 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  55i,11n,96p,389b,632s stack positions out of 5000i,500n,10000p,200000b,80000s
@@ -821,10 +836,10 @@ obe/sourcecodepro/SourceCodePro-Regular.pfb></usr/share/texmf-dist/fonts/type1/
 adobe/sourcesanspro/SourceSansPro-Bold.pfb></usr/share/texmf-dist/fonts/type1/a
 dobe/sourcesanspro/SourceSansPro-It.pfb></usr/share/texmf-dist/fonts/type1/adob
 e/sourcesanspro/SourceSansPro-Regular.pfb>
-Output written on memoriap2.pdf (5 pages, 433295 bytes).
+Output written on memoriap2.pdf (5 pages, 465604 bytes).
 PDF statistics:
- 85 PDF objects out of 1000 (max. 8388607)
- 69 compressed objects within 1 object stream
- 17 named destinations out of 1000 (max. 500000)
- 43 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 92 PDF objects out of 1000 (max. 8388607)
+ 75 compressed objects within 1 object stream
+ 19 named destinations out of 1000 (max. 500000)
+ 48 words of extra memory for PDF output out of 10000 (max. 10000000)
 

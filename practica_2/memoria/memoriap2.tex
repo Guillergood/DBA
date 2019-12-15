@@ -112,11 +112,11 @@ volver a actuar.
 
 \section{Diseño del agente}
 
-A continuación se adjuntan los diferentes diagramas utilizados en la implementación del funcionamiento del agente:
+A continuación se adjuntan los diferentes diagramas utilizados en la implementación del funcionamiento del agente en forma de enlace:
 \begin{itemize}
-	\item Diagrama de clases: https://drive.google.com/open?id=1AVGlVi7iFwF_wf06LgfKT3ENoQBaMscI
-	\item Diagrama de comunicación: https://drive.google.com/open?id=1Np2DMOF74VwDmPBNyue3_3VKu_a10eLy
-	\item Diagrama de actividad: https://drive.google.com/open?id=1IwIZwNYwJSlLvSVjxOjM7ngV2bpRHg42
+	\item \href{https://drive.google.com/open?id=1AVGlVi7iFwF_wf06LgfKT3ENoQBaMscI} {Diagrama de clases}
+	\item \href{https://drive.google.com/open?id=1Np2DMOF74VwDmPBNyue3_3VKu_a10eLy} {Diagrama de comunicación}
+	\item \href{https://drive.google.com/open?id=1IwIZwNYwJSlLvSVjxOjM7ngV2bpRHg42} {Diagrama de actividad}
 \end{itemize}
 
 \section{Lógica del agente}
@@ -140,9 +140,25 @@ El proceso de actuación es el siguiente:
 		\item Se comprueba si es posible moverse hacia una casilla determinada relativa a la posición del drone de entre las detectadas en los sensores, comprobando también su altura, y penalizando levemente la acción si conlleva desplazarse a una casilla cuya altitud es mayor a la actual. Esta valoración se suma a la anterior.
 		\item Se selecciona el movimiento a la casilla con menor valor, y el movimiento correspondiente. Si la casilla se encuentra a mayor altitud que el agente, se realiza un movimiento hacia arriba.
 	\end{enumerate}
+	\item Para la solventar los problemas de ciclos cortos, se ha implementado una matriz de enteros por donde pasa que indica cuantas veces ha pasado el agente.
+	
+	\item Para la solventar los problemas de ciclos complejos, se ha implementado que cuando dé una vuelta horaria o antihoraria y detecte en la matriz de veces que ha pasado por el mapa que en las casillas de delante y atrás sumen al menos 2, termine la ejecución.
 \end{enumerate}
 
 \section{Resultados observados}
 
+En los mapas se han observado los siguientes resultados:
+
+\includegraphics[scale=0.35]{img/resultados}\\[\bigskipamount]
+
+En los mapas del 1 al 7 se encontraba la solución con una traza prácticamente recta, debido a la escasa penalización de subida.
+
+\medskip
+
+En los mapas 8 y 9, debido a la simpleza de la heurística, el agente se atascaba en algunas esquinas, pero lograba salir después de recorrer todas las posiciones horizontales posibles.
+
+\medskip
+
+En el mapa 10 se rodeaba al objetivo. 
 
 \end{document}

@@ -6,11 +6,13 @@
 package Practica_3.Main;
 
 
+import DBA.SuperAgent;
 import Practica_3.Util.AwacPart;
 import Practica_3.Util.Gonio;
 import Practica_3.Util.IJsonSerializable;
 import Practica_3.Util.Matrix;
 import com.sun.javafx.geom.Vec3d;
+import es.upv.dsic.gti_ia.core.AgentID;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,39 +38,68 @@ public abstract class Agent {
     private boolean goal;
     private int to_rescue;
     private Status AgentStatus;
-    
-    
-    
-    
+
+
+    /**
+     * Default constructor
+     * Initializes an agent with its basic variables
+     * @author Juan Ocaña Valenzuela
+     * @param id The agent ID
+     * @param type The agent type (hawk, sparrow, fly or rescue)
+     * @param f_limit The fuel limit of this unit
+     * @param init Initial position of the agent
+     * @throws java.lang.Exception
+     */
+    protected Agent(String id, AgentType type, float f_limit, Vec3d init) throws Exception {
+        super(new AgentID(id));
+        agent_type = type;
+        FUEL_LIMIT = f_limit;
+        init_pos = init;
+    }
+
+    /**
+     * Sends the agent movement to the controller
+     * @param move The action to perform
+     */
+    protected void performMovement(IJsonSerializable move) {
+        throw new UnsupportedOperationException("Estamos trabajando en ello");
+    }
+
+    /**
+     * The way the agent works
+     * @return An IJsonSerializable action to perform
+     */
+    protected abstract IJsonSerializable chooseMovement();
+
     public enum AgentType{
         RESCUE, FLY, SPARROW, HAWK;
-        
+
         public final String display_name;
         public final String json_value;
         private static final HashMap<String,AgentType> NAME_LOOKUP = new HashMap<String, AgentType>();
-        
+
         AgentType(String display_name, String json_value){
             this.display_name = display_name;
             this.json_value = json_value;
             initializeTableLookup();
         }
-        
+
         private static void initializeTableLookup(){
             NAME_LOOKUP.put("rescue", RESCUE);
             NAME_LOOKUP.put("fly", FLY);
             NAME_LOOKUP.put("sparrow", SPARROW);
             NAME_LOOKUP.put("hawk", HAWK);
         }
-        
+
         public static AgentType parse(String name){
             AgentType type;
             name = name.toLowerCase();
-           
+
             type = NAME_LOOKUP.get(name);
             if(type == null)
                 throw new RuntimeException("Unsupported drone type.");
-            
-            
+
+
             return type;
         }
 
@@ -76,41 +107,38 @@ public abstract class Agent {
         public String toString() {
             return "AgentType{" + "display_name=" + display_name + ", json_value=" + json_value + '}';
         }
-        
+
     }
     public enum Status{
         IDLE, EXPLORING, EXPLORING_PLACE, GOING_RESCUE, GOING_HOME;
     }
-    
+
     protected Agent(AgentType agent_type, float fuel_limit, Vec3d init_pos){
         // Y el id qué???? EH???????
         this.agent_type = agent_type;
         this.FUEL_LIMIT = fuel_limit;
         this.init_pos = init_pos;
     }
-    
+
     protected void performMovement(IJsonSerializable msg) {
-        
+
     }
-    
+
     protected abstract IJsonSerializable chooseMovement();
-        
+
     protected void updatePerception(){
-        
+
     }
-    
+
     protected abstract void fill_map_explored();
-    
+
     public static boolean existAgent(String name){
-        
+
         return false;
     }
-    
+
     protected IJsonSerializable[] AStar(Vec3d start_pos, Vec3d end_pos){
-        
+
     }
-    
+
 }
-
-
-

@@ -16,22 +16,15 @@ import java.util.List;
 public class RescueAgent extends Agent{
     private static List<Vec3d> targetList;
     private Vec3d bestTarget;
-    
-    /**
-     *
-     * @param id
-     * @param agent_type
-     * @param fuel_limit
-     * @param init_pos
-     */
-    public RescueAgent(int id, AgentType agent_type, float fuel_limit, Vec3d init_pos){
-        
+
+    public RescueAgent(String id, float fuel_limit, Vec3d init_pos) throws Exception {
+        super(id, AgentType.FLY, fuel_limit, init_pos);
     }
     private void updateTargets() {
-        
+
     }
     private void chooseBestTarget(){
-        
+
     }
 
     @Override
