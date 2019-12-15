@@ -13,10 +13,12 @@ import Practica_3.Util.IJsonSerializable;
 import Practica_3.Util.Logger;
 import Practica_3.Util.Matrix;
 import com.sun.javafx.geom.Vec3d;
+import es.upv.dsic.gti_ia.core.ACLMessage;
 import es.upv.dsic.gti_ia.core.AgentID;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -28,6 +30,7 @@ public abstract class Agent extends SuperAgent {
     private String id;
     protected Matrix<Integer> MAP_HEIGHT;
     protected Matrix<Double> map_explored;
+    protected HashSet<AgentID> agents;
     private final AgentType agent_type;
     protected final float FUEL_LIMIT;
     private Vec3d init_pos;
@@ -89,6 +92,133 @@ public abstract class Agent extends SuperAgent {
         super.execute(); 
         //TODO
     }
+        /**
+     * <p> Send a message to the controller. </p>     
+     * @author Guillermo Bueno
+     * @param recvId is the receiver id
+     * @param performative is the variable as aspected
+     * @param content is the content of the message
+     */
+    public void sendMessage(String recvId, String performative, String content) {
+        ACLMessage outbox = new ACLMessage(); 
+        outbox.setSender(this.getAid());
+        outbox.setReceiver(new AgentID("Bellatrix"));
+        outbox.setPerformative(performative);
+        outbox.addReceiver(new AgentID(recvId));
+        outbox.setContent(content);
+        this.send(outbox);
+    }
+    
+      /**
+     * <p> Send a message to the controller. </p>     
+     * @author Guillermo Bueno
+     * @param recvId is the receiver id
+     * @param performative is the variable as aspected
+     * @param content is the content of the message
+     * @param replyTo is to whom the message was sent
+     */
+    public void sendMessage(String recvId, String performative, String content, String replyTo) {
+        ACLMessage outbox = new ACLMessage(); 
+        outbox.setSender(this.getAid());
+        outbox.setReceiver(new AgentID("Bellatrix"));
+        outbox.setPerformative(performative);
+        outbox.addReceiver(new AgentID(recvId));
+        outbox.setInReplyTo(replyTo);
+        outbox.setContent(content);
+        this.send(outbox);
+       
+    }
+    /**
+     * <p> Send a message to the controller. </p>     
+     * @author Guillermo Bueno
+     * @param recvId is the receiver id
+     * @param performative is the variable as aspected
+     * @param content is the content of the message
+     * @param replyTo is to whom the message was sent
+     * @param convID is the conversation ID
+     */
+    public void sendMessage(String recvId, String performative, String content, String replyTo, String convID) {
+        ACLMessage outbox = new ACLMessage(); 
+        outbox.setSender(this.getAid());
+        outbox.setReceiver(new AgentID("Bellatrix"));
+        outbox.setPerformative(performative);
+        outbox.addReceiver(new AgentID(recvId));
+        outbox.setInReplyTo(replyTo);
+        outbox.setContent(content);
+        if(convID != null)
+            outbox.setConversationId(convID);
+        this.send(outbox);
+    }
+    
+    /**
+     * <p> Get a message from controller and return the content. </p>     
+     * @author Guillermo Bueno
+     * @throws InterruptedException
+     * @return the content of message as String.
+     */
+    private String getMsg() throws InterruptedException{
+         ACLMessage acl_msg = new ACLMessage();
+         acl_msg = this.receiveACLMessage();
+         /*Performatives performative = null;
+         try {
+            performative = Performatives.valueOf(acl_msg.getPerformative());
+            if(performative == null){
+                throw new  Exception("UNHANDLED PERFORMATIVE TRANSLATION");
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }*/
+        AgentID sender = acl_msg.getSender();
+        
+        if(sender.name.equals("Bellatrix")){
+            
+        }
+        else{
+            switch(sender){
+            case REQUEST:
+                break;
+            case QUERY_REF:
+                break;
+            case INFORM:
+                break;
+            case FAILURE:
+                break;
+            case AGREE:
+                break;
+            case NOT_UNDERSTOOD:
+                break;
+            default:
+                throw new RuntimeException("UNHANDLED PERFORMATIVE");
+         }
+        }
+        
+        
+        
+        
+        
+         
+         /*switch(performative){
+            case REQUEST:
+                break;
+            case QUERY_REF:
+                break;
+            case INFORM:
+                break;
+            case FAILURE:
+                break;
+            case AGREE:
+                break;
+            case NOT_UNDERSTOOD:
+                break;
+            default:
+                throw new RuntimeException("UNHANDLED PERFORMATIVE");
+         }*/
+         
+        
+         
+        
+         return acl_msg.getContent();
+    }
     
     
     /**
@@ -140,6 +270,26 @@ public abstract class Agent extends SuperAgent {
     
     // -----------------------
     //ENUMS
+    
+    public enum Performatives{
+        REQUEST(0, "request"), QUERY_REF(1,"query_ref"), INFORM(2,"inform"), SUBSCRIBE(3,"subscribe"), FAILURE(4,"failure"), AGREE(5,"agree"), NOT_UNDERSTOOD(6,"not_understood");
+        
+        private int number;
+        private String string;
+
+        private Performatives(int number, String string) {
+            this.number = number;
+            this.string = string;
+        }
+        public String getName(){
+            return string;
+        }
+        public int getNumber(){
+            return number;
+        }
+        
+        
+    }
     
     public enum Status{
         IDLE, EXPLORING, EXPLORING_PLACE, GOING_RESCUE, GOING_HOME;
