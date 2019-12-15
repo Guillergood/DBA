@@ -1,5 +1,6 @@
 package Practica_3.Util;
 
+import com.sun.istack.internal.NotNull;
 import com.sun.javafx.geom.Vec3d;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -668,6 +669,10 @@ public enum Command implements IStringSerializable,IJsonSerializable{
            public Iterator<Direction> iterator() {
               return Arrays.asList(facingValues).iterator();
            }
+        }
+        
+        public static Direction parse(@NotNull String name){
+            return NAME_LOOKUP.get(name);
         }
      }
     

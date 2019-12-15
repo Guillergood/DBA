@@ -6,7 +6,13 @@
 package Practica_3.Util;
 
 import Practica_3.Main.Agent.AgentType;
+import com.eclipsesource.json.Json;
+import com.eclipsesource.json.JsonArray;
+import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.JsonValue;
+import com.sun.istack.internal.NotNull;
 import com.sun.javafx.geom.Vec3d;
+import java.util.ArrayList;
 
 /**
  *
@@ -18,8 +24,48 @@ public class AwacPart {
     public Vec3d vecPos;
     public Command.Direction direction;
     
-    public static AwacPart parse(String string){
-        
+    public static ArrayList<AwacPart> parse(@NotNull String string){
+       JsonObject perceptionObject;
+       perceptionObject = Json.parse(string).asObject();
+       JsonArray drones = perceptionObject.get("awacs").asArray();
+       
+       ArrayList<AwacPart> value = new ArrayList<>();
+       
+       
+      
+        for (JsonValue dron : drones) {
+            AwacPart awacPart = new AwacPart();
+            JsonObject jsonDron= dron.asObject();
+            
+            
+            if(jsonDron.get("name") != null){
+                awacPart.agent_name = jsonDron.get("name").asString();
+            }
+            if(jsonDron.get("x") != null && jsonDron.get("y") != null && jsonDron.get("z") != null){
+                double x = 0,y = 0,z = 0;
+                x = jsonDron.get("x").asDouble();
+                y = jsonDron.get("y").asDouble();
+                z = jsonDron.get("z").asDouble();
+                awacPart.vecPos.set(x, y, z);
+            }
+            if(jsonDron.get("rol") != null){
+                String rol = jsonDron.get("rol").asString();
+                AgentType type = AgentType.parse(rol);
+                awacPart.agent_type =  type;
+            }
+            if(jsonDron.get("direction") != null){
+                String direction = jsonDron.get("direction").asString();
+                Command.Direction directionCommand = Command.Direction.parse(direction);
+                awacPart.direction = directionCommand;
+            }
+            
+            value.add(awacPart);
+            
+         }
+       
+       
+        return value;
+       
     }
     public double getX(){
         return vecPos.x;
@@ -29,9 +75,6 @@ public class AwacPart {
     }
     public double getZ(){
         return vecPos.z;
-    }
-    public boolean isRemote(){
-        
     }
 
     @Override
