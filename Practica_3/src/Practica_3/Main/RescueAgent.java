@@ -16,9 +16,12 @@ import java.util.List;
 public class RescueAgent extends Agent{
     private static List<Vec3d> targetList;
     private Vec3d bestTarget;
+    private final int MAX_CAPACITY;
+    private int capacity;
 
     public RescueAgent(String id, float fuel_limit) throws Exception {
-        super(id, AgentType.FLY, fuel_limit);
+        super(id, AgentType.FLY, fuel_limit, 255, 1, 1);
+        MAX_CAPACITY = capacity = 10;
     }
     
     /**
@@ -27,12 +30,7 @@ public class RescueAgent extends Agent{
      */
     @Override
     protected Vec3d chooseMovement() {
-        // Si se ha llamado a este método es que el plan anterior ha finalizado
-        // y se debe "rebotar" hacia una dirección opuesta.
         
-        // Para rebotar hay que intentar definir el ángulo opuesto al que se seguía
-        // con una mutación ligera pseudoaleatoria, elegir una casilla del borde del mapa
-        // en esa dirección y mandar al algoritmo a buscar un plan.
         
         throw new UnsupportedOperationException("Paluego");
     }

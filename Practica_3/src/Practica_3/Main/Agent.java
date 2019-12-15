@@ -25,24 +25,35 @@ import java.util.stream.Collectors;
  * @author Alberto
  */
 public abstract class Agent extends SuperAgent {
+    
+    // Agent parameters
     private String id;
+    private final AgentType agent_type;
+    protected final int MAX_HEIGHT;
+    protected final int VISIBILITY;
+    protected final int RANGE;
+    protected final float FUEL_LIMIT;
+    private Status agentStatus;
+    
+    // Map parameters
     protected Matrix<Integer> MAP_HEIGHT;
     protected Matrix<Double> map_explored;
-    private final AgentType agent_type;
-    protected final float FUEL_LIMIT;
-    private Vec3d init_pos;
-    private Gonio mini_gonio;
-    private Matrix<Integer> infrared;
-    private Vec3d gps;
-    private float fuel;
-    private ArrayList<AwacPart> awacs;
-    private boolean status;
-    private boolean goal;
-    private int to_rescue;
-    private Status AgentStatus;
-    protected final Logger LOGGER;
+    protected Vec3d init_pos;
     
+    // Perception parameters
+    protected Gonio mini_gonio;
+    protected Matrix<Integer> infrared;
+    protected Vec3d gps;
+    protected float fuel;
+    protected ArrayList<AwacPart> awacs;
+    protected boolean status;
+    protected boolean goal;
+    
+    // Tourists remaining
+    private int to_rescue;
 
+    // Logger
+    protected final Logger LOGGER;
 
     /**
      * Default constructor
@@ -52,14 +63,16 @@ public abstract class Agent extends SuperAgent {
      * @param id The agent ID
      * @param type The agent type (hawk, sparrow, fly or rescue)
      * @param f_limit The fuel limit of this unit
-     * @param init Initial position of the agent
      * @throws java.lang.Exception
      */
-    protected Agent(String id, AgentType type, float f_limit) throws Exception{  
+    protected Agent(String id, AgentType type, float f_limit, int height, int visibility, int range) throws Exception{  
         super(new AgentID(id));
         agent_type = type;
         FUEL_LIMIT = f_limit;
         LOGGER = new Logger(this);
+        MAX_HEIGHT = height;
+        VISIBILITY = visibility;
+        RANGE = range;
     }
 
     /**
