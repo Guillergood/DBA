@@ -18,15 +18,17 @@ public class HawkAgent extends Agent{
         super(id, AgentType.FLY, fuel_limit, init_pos);
     }
     
-        /**
+    /**
      * The way the agent works
      * @return The next action to perform
      */
     @Override
     protected IJsonSerializable chooseMovement() {
-        IJsonSerializable move = Command.Direction.UP;
-        
-        // Ahora lo relleno
-        return move;
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    protected void fill_map_explored() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }

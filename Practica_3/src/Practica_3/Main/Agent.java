@@ -22,7 +22,7 @@ import java.util.List;
  * @author Alberto
  */
 public abstract class Agent extends SuperAgent {
-    private List<String> GroupAgent;
+    private static List<String> GroupAgent;
     protected Matrix<Integer> MAP_HEIGHT;
     protected Matrix<Double> map_explored;
     private final AgentType agent_type;
@@ -37,8 +37,8 @@ public abstract class Agent extends SuperAgent {
     private boolean goal;
     private int to_rescue;
     private Status AgentStatus;
-    
-    
+
+
     /**
      * Default constructor
      * Initializes an agent with its basic variables
@@ -55,7 +55,7 @@ public abstract class Agent extends SuperAgent {
         FUEL_LIMIT = f_limit;
         init_pos = init;
     }
-    
+
     /**
      * Sends the agent movement to the controller
      * @param move The action to perform
@@ -63,7 +63,7 @@ public abstract class Agent extends SuperAgent {
     protected void performMovement(IJsonSerializable move) {
         throw new UnsupportedOperationException("Estamos trabajando en ello");
     }
-    
+
     /**
      * The way the agent works
      * @return An IJsonSerializable action to perform
@@ -85,36 +85,50 @@ public abstract class Agent extends SuperAgent {
     protected ArrayList<IJsonSerializable> search() {
         throw new UnsupportedOperationException("Luego lo hago");
     }
+
+    protected abstract void fill_map_explored();
+
+    public static boolean existAgent(String name){
+
+        return false;
+    }
+    
+    // -----------------------
+    //ENUMS
+    
+    public enum Status{
+        IDLE, EXPLORING, EXPLORING_PLACE, GOING_RESCUE, GOING_HOME;
+    }
     
     public enum AgentType{
         RESCUE, FLY, SPARROW, HAWK;
-        
+
         public final String display_name;
         public final String json_value;
         private static final HashMap<String,AgentType> NAME_LOOKUP = new HashMap<String, AgentType>();
-        
+
         AgentType(String display_name, String json_value){
             this.display_name = display_name;
             this.json_value = json_value;
             initializeTableLookup();
         }
-        
+
         private static void initializeTableLookup(){
             NAME_LOOKUP.put("rescue", RESCUE);
             NAME_LOOKUP.put("fly", FLY);
             NAME_LOOKUP.put("sparrow", SPARROW);
             NAME_LOOKUP.put("hawk", HAWK);
         }
-        
+
         public static AgentType parse(String name){
             AgentType type;
             name = name.toLowerCase();
-           
+
             type = NAME_LOOKUP.get(name);
             if(type == null)
                 throw new RuntimeException("Unsupported drone type.");
-            
-            
+
+
             return type;
         }
 
@@ -122,12 +136,7 @@ public abstract class Agent extends SuperAgent {
         public String toString() {
             return "AgentType{" + "display_name=" + display_name + ", json_value=" + json_value + '}';
         }
-        
+
     }
-    public enum Status{
-        IDLE, EXPLORING, EXPLORING_PLACE, GOING_RESCUE, GOING_HOME;
-    }
+
 }
-
-
-

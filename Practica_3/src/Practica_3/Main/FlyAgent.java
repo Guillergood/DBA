@@ -24,9 +24,11 @@ public class FlyAgent extends Agent {
      */
     @Override
     protected IJsonSerializable chooseMovement() {
-        IJsonSerializable move = Direction.UP;
-        
-        // Ahora lo relleno
-        return move;
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    protected void fill_map_explored() {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }
