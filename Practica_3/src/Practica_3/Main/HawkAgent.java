@@ -5,8 +5,6 @@
  */
 package Practica_3.Main;
 
-import Practica_3.Util.Command;
-import Practica_3.Util.IJsonSerializable;
 import com.sun.javafx.geom.Vec3d;
 
 /**
@@ -14,8 +12,8 @@ import com.sun.javafx.geom.Vec3d;
  * @author Alberto
  */
 public class HawkAgent extends Agent{
-    public HawkAgent(String id, float fuel_limit, Vec3d init_pos) throws Exception {
-        super(id, AgentType.FLY, fuel_limit, init_pos);
+    public HawkAgent(String id, float fuel_limit) throws Exception {
+        super(id, AgentType.FLY, fuel_limit);
     }
     
     /**
@@ -33,20 +31,5 @@ public class HawkAgent extends Agent{
         
         throw new UnsupportedOperationException("Paluego");
     }
-
-    @Override
-    protected void fill_map_explored() {
-        // En cada turno actualizamos la percepción, rellenando en la matriz
-        // del mapa explorado el espacio correspondiente a la percepción de
-        // los agentes detectados con el awacs, además de los nuestros.
-        
-        // Llamar al awacs y guardar cada agente detectado y su tipo
-        
-        // por cada agente
-            // rellenar matriz
-        
-        // Rellenar lo nuestro
-        
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
+    
 }

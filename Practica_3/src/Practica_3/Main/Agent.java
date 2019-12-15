@@ -10,11 +10,15 @@ import DBA.SuperAgent;
 import Practica_3.Util.AwacPart;
 import Practica_3.Util.Gonio;
 import Practica_3.Util.IJsonSerializable;
+import Practica_3.Util.Logger;
 import Practica_3.Util.Matrix;
 import com.sun.javafx.geom.Vec3d;
 import es.upv.dsic.gti_ia.core.AgentID;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -26,7 +30,7 @@ public abstract class Agent extends SuperAgent {
     protected Matrix<Double> map_explored;
     private final AgentType agent_type;
     protected final float FUEL_LIMIT;
-    private final Vec3d init_pos;
+    private Vec3d init_pos;
     private Gonio mini_gonio;
     private Matrix<Integer> infrared;
     private Vec3d gps;
@@ -36,23 +40,26 @@ public abstract class Agent extends SuperAgent {
     private boolean goal;
     private int to_rescue;
     private Status AgentStatus;
+    protected final Logger LOGGER;
+    
 
 
     /**
      * Default constructor
      * Initializes an agent with its basic variables
      * @author Juan Ocaña Valenzuela
+     * @author Bruno García Trípoli
      * @param id The agent ID
      * @param type The agent type (hawk, sparrow, fly or rescue)
      * @param f_limit The fuel limit of this unit
      * @param init Initial position of the agent
      * @throws java.lang.Exception
      */
-    protected Agent(String id, AgentType type, float f_limit, Vec3d init) throws Exception {
+    protected Agent(String id, AgentType type, float f_limit) throws Exception{  
         super(new AgentID(id));
         agent_type = type;
         FUEL_LIMIT = f_limit;
-        init_pos = init;
+        LOGGER = new Logger(this);
     }
 
     /**
@@ -76,6 +83,13 @@ public abstract class Agent extends SuperAgent {
     protected void updatePerception() {
         throw new UnsupportedOperationException("Guille pa ti");
     }
+
+    @Override
+    protected void execute() {
+        super.execute(); 
+        //TODO
+    }
+    
     
     /**
      * Finds the shortest path between two points with the Fringe Search algorithm
@@ -89,12 +103,40 @@ public abstract class Agent extends SuperAgent {
     }
 
     /**
+     * @author Bruno García Trípoli
+     * 
      * Fill the explored map using the awacs sensor and the type of the 
      * rest of agents
      */
-    
-    // Considerando que deje de ser abstracto
-    protected abstract void fill_map_explored();
+    protected void fill_map_explored(){   
+        Double cost = 10.0;
+        
+        for(AwacPart agent : awacs)
+        {            
+            Matrix.Operator<Double> operator = (x,y,value)->{                
+                return (MAP_HEIGHT.get(x, y)<agent.getY())?cost:value;
+            };
+            switch(agent.agent_type)
+            {
+                case FLY:
+                    map_explored.ranged_foreach((int)agent.getX(), (int)agent.getZ(), 5,operator);                    
+                    break;
+                case SPARROW:
+                    map_explored.ranged_foreach((int)agent.getX(), (int)agent.getZ(), 11,operator);                    
+                    break;
+                case HAWK:
+                    map_explored.ranged_foreach((int)agent.getX(), (int)agent.getZ(), 41,operator);                    
+                    break;
+                default:
+                    continue;
+            }            
+        }
+    }
+
+    public static boolean existAgent(String name){
+        
+        return false;
+    }
     
     // -----------------------
     //ENUMS
@@ -104,25 +146,18 @@ public abstract class Agent extends SuperAgent {
     }
     
     public enum AgentType{
-        RESCUE, FLY, SPARROW, HAWK;
+        RESCUE("rescue"), FLY("fly"), SPARROW("sparrow"), HAWK("hawk");
 
         public final String display_name;
-        public final String json_value;
-        private static final HashMap<String,AgentType> NAME_LOOKUP = new HashMap<String, AgentType>();
+        private static AgentType[] VALUES = values();
+        private static final Map<String,AgentType> NAME_LOOKUP = Arrays.stream(VALUES).collect(Collectors.toMap(AgentType::getName, (agentType) -> {
+           return agentType;
+        }));
 
-        AgentType(String display_name, String json_value){
+        AgentType(String display_name){
             this.display_name = display_name;
-            this.json_value = json_value;
-            initializeTableLookup();
         }
-
-        private static void initializeTableLookup(){
-            NAME_LOOKUP.put("rescue", RESCUE);
-            NAME_LOOKUP.put("fly", FLY);
-            NAME_LOOKUP.put("sparrow", SPARROW);
-            NAME_LOOKUP.put("hawk", HAWK);
-        }
-
+               
         public static AgentType parse(String name){
             AgentType type;
             name = name.toLowerCase();
@@ -135,11 +170,47 @@ public abstract class Agent extends SuperAgent {
             return type;
         }
 
+        public String getName(){
+            return display_name;
+        }
+        
         @Override
         public String toString() {
-            return "AgentType{" + "display_name=" + display_name + ", json_value=" + json_value + '}';
+            return "AgentType{" + getName() + '}';
         }
 
     }
 
+    public static class Factory{
+        private static Map<String,Integer> ZOMBIE_MAP = new HashMap<>();
+       
+        public static Agent create(String name,AgentType type, float fuel_limit){
+            String final_name = name;
+            if(ZOMBIE_MAP.containsKey(name))
+                final_name = name+"_Z"+ZOMBIE_MAP.get(name);
+            else
+                ZOMBIE_MAP.put(name, 0);
+            
+            try{                
+                switch(type){
+                    case FLY:
+                        return new FlyAgent(final_name,fuel_limit);
+                    case SPARROW:
+                        return null;
+                    case HAWK:
+                        return new HawkAgent(final_name,fuel_limit);
+                    case RESCUE:
+                        return new RescueAgent(final_name,fuel_limit);
+                    default:
+                        return null;
+                }
+            }catch (Exception ex){
+                System.err.println(String.format("Agent with aid: \"%s\" already exist. Zombie Count increased, trying again...", final_name));
+                int count = ZOMBIE_MAP.get(name);
+                ZOMBIE_MAP.put(name, ++count);
+                return Factory.create(name,type,fuel_limit);
+            }           
+        }
+    }   
+    
 }
