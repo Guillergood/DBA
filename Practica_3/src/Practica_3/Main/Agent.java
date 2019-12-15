@@ -9,6 +9,7 @@ package Practica_3.Main;
 import DBA.SuperAgent;
 import Practica_3.Util.AwacPart;
 import Practica_3.Util.Gonio;
+import Practica_3.Util.IJsonSerializable;
 import Practica_3.Util.Matrix;
 import com.sun.javafx.geom.Vec3d;
 import es.upv.dsic.gti_ia.core.AgentID;
@@ -43,6 +44,11 @@ public abstract class Agent extends SuperAgent {
      * Default constructor
      * Initializes an agent with its basic variables
      * @author Juan Ocaña Valenzuela
+     * @param id The agent ID
+     * @param type The agent type (hawk, sparrow, fly or rescue)
+     * @param f_limit The fuel limit of this unit
+     * @param init Initial position of the agent
+     * @throws java.lang.Exception
      */
     protected Agent(String id, AgentType type, float f_limit, Vec3d init) throws Exception {
         super(new AgentID(id));
@@ -50,6 +56,20 @@ public abstract class Agent extends SuperAgent {
         FUEL_LIMIT = f_limit;
         init_pos = init;
     }
+    
+    /**
+     * Sends the agent movement to the controller
+     * @param move The action to perform
+     */
+    protected void performMovement(IJsonSerializable move) {
+        throw new UnsupportedOperationException("Estamos trabajando en ello");
+    }
+    
+    /**
+     * The way the agent works
+     * @return An IJsonSerializable action to perform
+     */
+    protected abstract IJsonSerializable chooseMovement();
     
     public enum AgentType{
         RESCUE, FLY, SPARROW, HAWK;
