@@ -18,7 +18,6 @@ import es.upv.dsic.gti_ia.core.AgentID;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -30,7 +29,6 @@ public abstract class Agent extends SuperAgent {
     private String id;
     protected Matrix<Integer> MAP_HEIGHT;
     protected Matrix<Double> map_explored;
-    protected HashSet<AgentID> agents;
     private final AgentType agent_type;
     protected final float FUEL_LIMIT;
     private Vec3d init_pos;
