@@ -19,12 +19,19 @@ public class FlyAgent extends Agent {
     }
     
     /**
-     * The way the agent works
+     * The way the agent goes
      * @return The next action to perform
      */
     @Override
-    protected IJsonSerializable chooseMovement() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    protected Vec3d chooseMovement() {
+        // Si se ha llamado a este método es que el plan anterior ha finalizado
+        // y se debe "rebotar" hacia una dirección opuesta.
+        
+        // Para rebotar hay que intentar definir el ángulo opuesto al que se seguía
+        // con una mutación ligera pseudoaleatoria, elegir una casilla del borde del mapa
+        // en esa dirección y mandar al algoritmo a buscar un plan.
+        
+        throw new UnsupportedOperationException("Paluego");
     }
 
     @Override

@@ -15,14 +15,13 @@ import com.sun.javafx.geom.Vec3d;
 import es.upv.dsic.gti_ia.core.AgentID;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 
 /**
  *
  * @author Alberto
  */
 public abstract class Agent extends SuperAgent {
-    private static String id;
+    private String id;
     protected Matrix<Integer> MAP_HEIGHT;
     protected Matrix<Double> map_explored;
     private final AgentType agent_type;
@@ -65,10 +64,11 @@ public abstract class Agent extends SuperAgent {
     }
 
     /**
-     * The way the agent works
-     * @return An IJsonSerializable action to perform
+     * The way the agent goes
+     * Defines the new pseudo-objective the agent has to reach
+     * @return A position in the map (Vec3d)
      */
-    protected abstract IJsonSerializable chooseMovement();
+    protected abstract Vec3d chooseMovement();
     
     /**
      * Updates the agent perception at demand
@@ -92,6 +92,8 @@ public abstract class Agent extends SuperAgent {
      * Fill the explored map using the awacs sensor and the type of the 
      * rest of agents
      */
+    
+    // Considerando que deje de ser abstracto
     protected abstract void fill_map_explored();
     
     // -----------------------
