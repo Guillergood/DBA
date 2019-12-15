@@ -22,7 +22,7 @@ import java.util.HashSet;
  * @author Alberto
  */
 public abstract class Agent extends SuperAgent {
-    private static HashSet<String> GroupAgent;
+    private static String id;
     protected Matrix<Integer> MAP_HEIGHT;
     protected Matrix<Double> map_explored;
     private final AgentType agent_type;
@@ -93,16 +93,6 @@ public abstract class Agent extends SuperAgent {
      * rest of agents
      */
     protected abstract void fill_map_explored();
-
-    /**
-     * Checks if an agent with the given ID exists
-     * @param id
-     * @return 
-     */
-    public static boolean existAgent(String id){
-        
-        return GroupAgent.contains(id);
-    }
     
     // -----------------------
     //ENUMS
