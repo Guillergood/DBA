@@ -5,14 +5,28 @@
  */
 package Practica_3.Main;
 
+import Practica_3.Util.Command.Direction;
+import Practica_3.Util.IJsonSerializable;
 import com.sun.javafx.geom.Vec3d;
 
 /**
  *
  * @author Alberto
  */
-public class FlyAgent extends Agent{
+public class FlyAgent extends Agent {
     public FlyAgent(String id, float fuel_limit, Vec3d init_pos) throws Exception {
         super(id, AgentType.FLY, fuel_limit, init_pos);
+    }
+    
+    /**
+     * The way the agent works
+     * @return The next action to perform
+     */
+    @Override
+    protected IJsonSerializable chooseMovement() {
+        IJsonSerializable move = Direction.UP;
+        
+        // Ahora lo relleno
+        return move;
     }
 }

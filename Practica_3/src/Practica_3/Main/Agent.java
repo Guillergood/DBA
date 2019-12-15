@@ -16,7 +16,6 @@ import es.upv.dsic.gti_ia.core.AgentID;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  *
@@ -70,6 +69,22 @@ public abstract class Agent extends SuperAgent {
      * @return An IJsonSerializable action to perform
      */
     protected abstract IJsonSerializable chooseMovement();
+    
+    /**
+     * Updates the agent perception at demand
+     */
+    protected void updatePerception() {
+        throw new UnsupportedOperationException("Guille pa ti");
+    }
+    
+    /**
+     * Finds the shortest path between two points with the Fringe Search algorithm
+     * 
+     * @return The plan to follow
+     */
+    protected ArrayList<IJsonSerializable> search() {
+        throw new UnsupportedOperationException("Luego lo hago");
+    }
     
     public enum AgentType{
         RESCUE, FLY, SPARROW, HAWK;
