@@ -14,8 +14,10 @@ import Practica_3.Util.Matrix;
 import com.sun.javafx.geom.Vec3d;
 import es.upv.dsic.gti_ia.core.AgentID;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -49,7 +51,7 @@ public abstract class Agent extends SuperAgent {
      * @param init Initial position of the agent
      * @throws java.lang.Exception
      */
-    protected Agent(String id, AgentType type, float f_limit, Vec3d init) throws Exception {
+    protected Agent(String id, AgentType type, float f_limit, Vec3d init) throws Exception {        
         super(new AgentID(id));
         agent_type = type;
         FUEL_LIMIT = f_limit;
@@ -86,10 +88,33 @@ public abstract class Agent extends SuperAgent {
         throw new UnsupportedOperationException("Luego lo hago");
     }
 
-    protected abstract void fill_map_explored();
+    protected void fill_map_explored(){   
+        Double cost = 10.0;
+        
+        for(AwacPart agent : awacs)
+        {            
+            Matrix.Operator<Double> operator = (x,y,value)->{                
+                return (MAP_HEIGHT.get(x, y)<agent.getY())?cost:value;
+            };
+            switch(agent.agent_type)
+            {
+                case FLY:
+                    map_explored.ranged_foreach((int)agent.getX(), (int)agent.getZ(), 5,operator);                    
+                    break;
+                case SPARROW:
+                    map_explored.ranged_foreach((int)agent.getX(), (int)agent.getZ(), 11,operator);                    
+                    break;
+                case HAWK:
+                    map_explored.ranged_foreach((int)agent.getX(), (int)agent.getZ(), 41,operator);                    
+                    break;
+                default:
+                    continue;
+            }            
+        }
+    }
 
     public static boolean existAgent(String name){
-
+        
         return false;
     }
     
@@ -101,25 +126,18 @@ public abstract class Agent extends SuperAgent {
     }
     
     public enum AgentType{
-        RESCUE, FLY, SPARROW, HAWK;
+        RESCUE("rescue"), FLY("fly"), SPARROW("sparrow"), HAWK("hawk");
 
         public final String display_name;
-        public final String json_value;
-        private static final HashMap<String,AgentType> NAME_LOOKUP = new HashMap<String, AgentType>();
+        private static AgentType[] VALUES = values();
+        private static final Map<String,AgentType> NAME_LOOKUP = Arrays.stream(VALUES).collect(Collectors.toMap(AgentType::getName, (agentType) -> {
+           return agentType;
+        }));
 
-        AgentType(String display_name, String json_value){
+        AgentType(String display_name){
             this.display_name = display_name;
-            this.json_value = json_value;
-            initializeTableLookup();
         }
-
-        private static void initializeTableLookup(){
-            NAME_LOOKUP.put("rescue", RESCUE);
-            NAME_LOOKUP.put("fly", FLY);
-            NAME_LOOKUP.put("sparrow", SPARROW);
-            NAME_LOOKUP.put("hawk", HAWK);
-        }
-
+               
         public static AgentType parse(String name){
             AgentType type;
             name = name.toLowerCase();
@@ -132,9 +150,13 @@ public abstract class Agent extends SuperAgent {
             return type;
         }
 
+        public String getName(){
+            return display_name;
+        }
+        
         @Override
         public String toString() {
-            return "AgentType{" + "display_name=" + display_name + ", json_value=" + json_value + '}';
+            return "AgentType{" + getName() + '}';
         }
 
     }

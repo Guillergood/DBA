@@ -120,6 +120,65 @@ public class Matrix<T> {
 		}
 	}
         
+         /**
+         *       
+         */
+	public void ranged_foreach(int x,int y,int size,Operator<T> operator) {
+		int local_step = (size * size)/(THREAD_COUNT+1);
+		int value_rows = size;
+		int value_cols = size;
+
+		int min,max;
+		for(int id=0; id<THREAD_COUNT; id++)
+		{
+			min = id*local_step;
+			max = (id+1)*local_step;
+			int enclosing_values[] = {min,max};
+			thread[id] = new Thread(() -> {
+				for (int c = enclosing_values[0]; c < enclosing_values[1]; c++) {
+					int i = c%value_rows;
+					int j = c/value_cols;
+					int x_offset = i - value_rows/2;
+					int y_offset = j - value_cols/2;
+                                        int x_ = x + x_offset;
+                                        int y_ = y + y_offset;
+					try {                                            
+                                            T value = operator.operate(x_,y_,get(x_,y_));
+                                            set(x_,y_,value);
+                                            //set(x+x_offset,y+y_offset,value[i][j]);
+					}catch(Exception e) {}
+				}
+			});
+			thread[id].setDaemon(true);
+			thread[id].start();
+		}
+
+		min = THREAD_COUNT*local_step;
+		max = value_rows*value_cols;
+		for (int c = min; c < max; c++) {
+			int i = c%value_rows;
+			int j = c/value_cols;
+			int x_offset = i - value_rows/2;
+			int y_offset = j - value_cols/2;
+                        int x_ = x + x_offset;
+                        int y_ = y + y_offset;
+			try {
+                            T value = operator.operate(x_,y_,get(x_,y_));
+                            set(x_,y_,value);
+                            //set(x+x_offset,y+y_offset,value[i][j]);
+			}catch(Exception e) {}
+		}
+
+		for(int id=0; id<THREAD_COUNT; id++)
+		{
+			try {
+				thread[id].join();
+			} catch (InterruptedException e) {
+                            System.err.println(e.getMessage());				
+			}
+		}
+	}
+        
         /**
          * 
          * @param x init row
