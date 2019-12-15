@@ -8,6 +8,7 @@ package Practica_3.Main;
 
 import Practica_3.Util.AwacPart;
 import Practica_3.Util.Gonio;
+import Practica_3.Util.IJsonSerializable;
 import Practica_3.Util.Matrix;
 import com.sun.javafx.geom.Vec3d;
 import java.util.ArrayList;
@@ -20,8 +21,8 @@ import java.util.Map;
  * @author Alberto
  */
 public abstract class Agent {
-    private List<String> GroupAgent;
-    protected final Matrix<Integer> MAP_HEIGHT;
+    private static List<String> GroupAgent;
+    protected Matrix<Integer> MAP_HEIGHT;
     protected Matrix<Double> map_explored;
     private final AgentType agent_type;
     protected final float FUEL_LIMIT;
@@ -80,6 +81,35 @@ public abstract class Agent {
     public enum Status{
         IDLE, EXPLORING, EXPLORING_PLACE, GOING_RESCUE, GOING_HOME;
     }
+    
+    protected Agent(AgentType agent_type, float fuel_limit, Vec3d init_pos){
+        // Y el id qué???? EH???????
+        this.agent_type = agent_type;
+        this.FUEL_LIMIT = fuel_limit;
+        this.init_pos = init_pos;
+    }
+    
+    protected void performMovement(IJsonSerializable msg) {
+        
+    }
+    
+    protected abstract IJsonSerializable chooseMovement();
+        
+    protected void updatePerception(){
+        
+    }
+    
+    protected abstract void fill_map_explored();
+    
+    public static boolean existAgent(String name){
+        
+        return false;
+    }
+    
+    protected IJsonSerializable[] AStar(Vec3d start_pos, Vec3d end_pos){
+        
+    }
+    
 }
 
 
