@@ -24,15 +24,19 @@ public class RescueAgent extends Agent{
     }
     
     /**
-     * The way the agent works
+     * The way the agent goes
      * @return The next action to perform
      */
     @Override
-    protected IJsonSerializable chooseMovement() {
-        IJsonSerializable move = Command.Direction.UP;
+    protected Vec3d chooseMovement() {
+        // Si se ha llamado a este método es que el plan anterior ha finalizado
+        // y se debe "rebotar" hacia una dirección opuesta.
         
-        // Ahora lo relleno
-        return move;
+        // Para rebotar hay que intentar definir el ángulo opuesto al que se seguía
+        // con una mutación ligera pseudoaleatoria, elegir una casilla del borde del mapa
+        // en esa dirección y mandar al algoritmo a buscar un plan.
+        
+        throw new UnsupportedOperationException("Paluego");
     }
     
     private void updateTargets() {

@@ -15,7 +15,6 @@ import com.sun.javafx.geom.Vec3d;
 import es.upv.dsic.gti_ia.core.AgentID;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -24,7 +23,7 @@ import java.util.stream.Collectors;
  * @author Alberto
  */
 public abstract class Agent extends SuperAgent {
-    private static List<String> GroupAgent;
+    private String id;
     protected Matrix<Integer> MAP_HEIGHT;
     protected Matrix<Double> map_explored;
     private final AgentType agent_type;
@@ -67,10 +66,11 @@ public abstract class Agent extends SuperAgent {
     }
 
     /**
-     * The way the agent works
-     * @return An IJsonSerializable action to perform
+     * The way the agent goes
+     * Defines the new pseudo-objective the agent has to reach
+     * @return A position in the map (Vec3d)
      */
-    protected abstract IJsonSerializable chooseMovement();
+    protected abstract Vec3d chooseMovement();
     
     /**
      * Updates the agent perception at demand
@@ -82,12 +82,18 @@ public abstract class Agent extends SuperAgent {
     /**
      * Finds the shortest path between two points with the Fringe Search algorithm
      * 
+     * @param start The start point of the route
+     * @param end The finish point
      * @return The plan to follow
      */
-    protected ArrayList<IJsonSerializable> search() {
+    protected ArrayList<IJsonSerializable> search(Vec3d start, Vec3d end) {
         throw new UnsupportedOperationException("Luego lo hago");
     }
 
+    /**
+     * Fill the explored map using the awacs sensor and the type of the 
+     * rest of agents
+     */
     protected void fill_map_explored(){   
         Double cost = 10.0;
         

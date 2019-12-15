@@ -55,7 +55,7 @@ public class AwacPart {
             }
             if(jsonDron.get("direction") != null){
                 String direction = jsonDron.get("direction").asString();
-                Command.Direction directionCommand = Command.Direction.parse(direction);
+                Command.Direction directionCommand = Command.Direction.byJsonValue(direction);
                 awacPart.direction = directionCommand;
             }
             
