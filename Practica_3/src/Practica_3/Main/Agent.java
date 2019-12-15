@@ -15,14 +15,14 @@ import com.sun.javafx.geom.Vec3d;
 import es.upv.dsic.gti_ia.core.AgentID;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.HashSet;
 
 /**
  *
  * @author Alberto
  */
 public abstract class Agent extends SuperAgent {
-    private static List<String> GroupAgent;
+    private static HashSet<String> GroupAgent;
     protected Matrix<Integer> MAP_HEIGHT;
     protected Matrix<Double> map_explored;
     private final AgentType agent_type;
@@ -80,17 +80,28 @@ public abstract class Agent extends SuperAgent {
     /**
      * Finds the shortest path between two points with the Fringe Search algorithm
      * 
+     * @param start The start point of the route
+     * @param end The finish point
      * @return The plan to follow
      */
-    protected ArrayList<IJsonSerializable> search() {
+    protected ArrayList<IJsonSerializable> search(Vec3d start, Vec3d end) {
         throw new UnsupportedOperationException("Luego lo hago");
     }
 
+    /**
+     * Fill the explored map using the awacs sensor and the type of the 
+     * rest of agents
+     */
     protected abstract void fill_map_explored();
 
-    public static boolean existAgent(String name){
-
-        return false;
+    /**
+     * Checks if an agent with the given ID exists
+     * @param id
+     * @return 
+     */
+    public static boolean existAgent(String id){
+        
+        return GroupAgent.contains(id);
     }
     
     // -----------------------
