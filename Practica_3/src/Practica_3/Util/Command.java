@@ -671,7 +671,7 @@ public enum Command implements IStringSerializable,IJsonSerializable{
            }
         }
         
-        public static Direction parse(@NotNull String name){
+        public static Direction byJsonValue(@NotNull String name){
             return NAME_LOOKUP.get(name);
         }
      }
