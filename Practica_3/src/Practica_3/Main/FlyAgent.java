@@ -12,8 +12,8 @@ import com.sun.javafx.geom.Vec3d;
  * @author Alberto
  */
 public class FlyAgent extends Agent {
-    public FlyAgent(String id, float fuel_limit) throws Exception {
-        super(id, AgentType.FLY, fuel_limit, 255, 20, 5);
+    public FlyAgent(String id, float fuel_limit, boolean debug) throws Exception {
+        super(id, AgentType.FLY, fuel_limit, 255, 20, 5,debug);
     }
     
     /**
