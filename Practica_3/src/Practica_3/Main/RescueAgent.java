@@ -6,6 +6,7 @@
 package Practica_3.Main;
 
 
+import Practica_3.Util.IJsonSerializable;
 import com.sun.javafx.geom.Vec3d;
 import java.util.List;
 
@@ -29,7 +30,7 @@ public class RescueAgent extends Agent{
      * @return The next action to perform
      */
     @Override
-    protected Vec3d chooseMovement() {
+    protected IJsonSerializable chooseMovement() {
         
         
         throw new UnsupportedOperationException("Paluego");

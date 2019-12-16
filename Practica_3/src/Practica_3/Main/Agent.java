@@ -8,10 +8,14 @@ package Practica_3.Main;
 
 import DBA.SuperAgent;
 import Practica_3.Util.AwacPart;
+import Practica_3.Util.Command;
 import Practica_3.Util.Gonio;
 import Practica_3.Util.IJsonSerializable;
 import Practica_3.Util.Logger;
 import Practica_3.Util.Matrix;
+import com.eclipsesource.json.Json;
+import com.eclipsesource.json.JsonArray;
+import com.eclipsesource.json.JsonObject;
 import com.sun.javafx.geom.Vec3d;
 import es.upv.dsic.gti_ia.core.ACLMessage;
 import es.upv.dsic.gti_ia.core.AgentID;
@@ -19,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 /**
@@ -29,6 +34,7 @@ public abstract class Agent extends SuperAgent {
     
     // Agent parameters
     private String id;
+    private String session;
     private final AgentType agent_type;
     protected final int MAX_HEIGHT;
     protected final int VISIBILITY;
@@ -87,9 +93,9 @@ public abstract class Agent extends SuperAgent {
     /**
      * The way the agent goes
      * Defines the new pseudo-objective the agent has to reach
-     * @return A position in the map (Vec3d)
+     
      */
-    protected abstract Vec3d chooseMovement();
+    protected abstract IJsonSerializable chooseMovement();
     
     /**
      * Updates the agent perception at demand
@@ -97,13 +103,71 @@ public abstract class Agent extends SuperAgent {
     protected void updatePerception() {
         throw new UnsupportedOperationException("Guille pa ti");
     }
+    
+    private void initializeMap(JsonObject jObject) throws InterruptedException{        
+        int dimx = jObject.get("dimx").asInt();
+        int dimy = jObject.get("dimy").asInt();
+        JsonArray json_array = jObject.get("map").asArray();
+        
+        MAP_HEIGHT = new Matrix<Integer>(dimx,dimy,Integer.class);
+        MAP_HEIGHT.foreach((x,y,v)->json_array.get(x+y*dimx).asInt());
+    }
+    
+    private void getTrace(){
+        throw new UnsupportedOperationException("Guille pa ti");
+    }
+    
+    private boolean checkIn(int x,int y) throws InterruptedException{
+        JsonObject jsonMsg = new JsonObject();
+        jsonMsg.add("command", Command.CHECK_IN.getJsonValue());
+        jsonMsg.add("session", session);
+        jsonMsg.add("x", x);
+        jsonMsg.add("y", y);   
+        
+        sendMessage(ACLMessage.REQUEST, jsonMsg.toString(), new AgentID("Bellatrix"));
+        
+        ACLMessage result = receiveACLMessage();
+        if( result.getPerformativeInt() != ACLMessage.INFORM)
+            return false;
+        return true;
+    }
 
     @Override
     protected void execute() {
-        super.execute(); 
-        //TODO
+        super.execute();
+        try {         
+            //Step 1: Recibe First INFORM from Bureaucratic
+            String subscribeMsg = getMsg();            
+            JsonObject jObject = Json.parse(subscribeMsg).asObject();
+            session = jObject.get("session").asString();
+            //Step 1.2: Initialize Map
+            initializeMap(jObject);
+            
+            {//Step 2: Check In
+                int x,y;
+                do{
+                    String msg_bureaucratic_checkIn = getMsg();
+                    JsonObject perceptionObject = Json.parse(msg_bureaucratic_checkIn).asObject();
+                    x = perceptionObject.get("x").asInt();
+                    y = perceptionObject.get("y").asInt();
+                }while(checkIn(x,y));
+            }
+            //Step 3: Loop
+            do{
+                updatePerception();
+                IJsonSerializable command = chooseMovement();
+                performMovement(command);                
+            }while(to_rescue>0 && !gps.equals(init_pos));
+            
+            //Step 4: Exit
+            performMovement(Command.STOP);
+            getTrace();
+            
+        } catch (InterruptedException ex) {
+            java.util.logging.Logger.getLogger(Agent.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
-        /**
+    /**
      * <p> Send a message to the controller. </p>     
      * @author Guillermo Bueno
      * @param recvId is the receiver id

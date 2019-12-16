@@ -5,8 +5,7 @@
  */
 package Practica_3.Main;
 
-import com.sun.javafx.geom.Vec3d;
-
+import Practica_3.Util.IJsonSerializable;
 /**
  *
  * @author Alberto
@@ -21,7 +20,7 @@ public class FlyAgent extends Agent {
      * @return The next action to perform
      */
     @Override
-    protected Vec3d chooseMovement() {
+    protected IJsonSerializable chooseMovement() {
         // Si se ha llamado a este método es que el plan anterior ha finalizado
         // y se debe "rebotar" hacia una dirección opuesta.
         
