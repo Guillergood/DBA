@@ -41,6 +41,8 @@ public abstract class Agent extends SuperAgent {
     protected final float FUEL_LIMIT;
     protected final boolean DEBUG;
     private Status agentStatus;
+    private AgentID inReplyTo;
+    private String conversationId;
     
     // Map parameters
     protected Matrix<Integer> MAP_HEIGHT;
@@ -102,7 +104,7 @@ public abstract class Agent extends SuperAgent {
      * @author Guillermo Bueno
      * Updates the agent perception at demand
      */
-    protected void updatePerception(AgentID inReplyTo, String conversationId) {
+    protected void updatePerception() {
         ACLMessage outbox = new ACLMessage(); 
         outbox.setSender(this.getAid());
         outbox.setReceiver(new AgentID("Bellatrix"));
