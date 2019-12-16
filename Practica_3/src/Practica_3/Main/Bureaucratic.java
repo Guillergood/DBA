@@ -14,6 +14,7 @@ import com.eclipsesource.json.JsonValue;
 import es.upv.dsic.gti_ia.core.ACLMessage;
 import es.upv.dsic.gti_ia.core.AgentID;
 import java.util.ArrayList;
+import java.util.logging.Level;
 import javafx.util.Pair;
 
 /**
@@ -39,10 +40,10 @@ public class Bureaucratic extends SuperAgent{
         names.add("MOGCA_2");
         names.add("ALCON");
         names.add("REGCUE");
-        Agent.Factory.create(names.get(0), Agent.AgentType.FLY, zombie_count);
-        Agent.Factory.create(names.get(1), Agent.AgentType.FLY, zombie_count);
-        Agent.Factory.create(names.get(2), Agent.AgentType.HAWK, zombie_count);
-        Agent.Factory.create(names.get(3), Agent.AgentType.RESCUE, zombie_count);
+        Agent.Factory.create(names.get(0), Agent.AgentType.FLY, zombie_count,DEBUG);
+        Agent.Factory.create(names.get(1), Agent.AgentType.FLY, zombie_count,DEBUG);
+        Agent.Factory.create(names.get(2), Agent.AgentType.HAWK, zombie_count,DEBUG);
+        Agent.Factory.create(names.get(3), Agent.AgentType.RESCUE, zombie_count,DEBUG);
     }
 
     @Override
@@ -72,6 +73,7 @@ public class Bureaucratic extends SuperAgent{
             outbox.setConversationId(convID);
         this.send(outbox);
     }
+    
 
 
     private boolean login() throws InterruptedException{
@@ -83,26 +85,23 @@ public class Bureaucratic extends SuperAgent{
             jsonMsg.add("password", PASSWORD);
             ACLMessage message = new ACLMessage(ACLMessage.SUBSCRIBE);
             message.setContent(jsonMsg.toString());
-            message.setSender(this.getAid());
-            message.setReceiver(new AgentID("Bellatrix"));
-
-
             send(message);
 
-            ACLMessage informMessage = receiveACLMessage();
+            ACLMessage checkin = receiveACLMessage();
 
-            if(informMessage.getPerformativeInt() == ACLMessage.INFORM){
+            if(checkin.getPerformativeInt() == ACLMessage.INFORM){
                 continua = false;
-                String content = informMessage.getContent();
+                String content = checkin.getContent();
                 String session = parseSession(content);
-                Pair<Integer,Integer> dimensiones = parseDimensions(content);
-                parseMap(content);
+                Pair<Integer,Integer> dims = parseDimensions(content);
+                int[][] fullMap;
+                fullMap = parseMap(content, dims.getKey(), dims.getValue());
                 
                 
                 jsonMsg = new JsonObject();
                 jsonMsg.add("session", session);
-                jsonMsg.add("dimx", dimensiones.getKey());
-                jsonMsg.add("dimy", dimensiones.getValue());
+                jsonMsg.add("dimx", dims.getKey());
+                jsonMsg.add("dimy", dims.getValue());
                 ACLMessage spreadInformation = new ACLMessage(ACLMessage.INFORM);
                 spreadInformation.setContent(jsonMsg.toString());
                 spreadInformation.setSender(this.getAid());
@@ -111,10 +110,12 @@ public class Bureaucratic extends SuperAgent{
                 spreadInformation.addReceiver(new AgentID(names.get(1)));
                 spreadInformation.addReceiver(new AgentID(names.get(2)));
                 spreadInformation.addReceiver(new AgentID(names.get(3)));
-                spreadInformation.setConversationId(informMessage.getConversationId());
+                spreadInformation.setConversationId(checkin.getConversationId());
                 send(spreadInformation);
 
             }
+
+         
 
         }
 
@@ -122,6 +123,8 @@ public class Bureaucratic extends SuperAgent{
 
 
     }
+
+
 
     public String parseSession(String content){
         JsonObject perceptionObject;
@@ -134,6 +137,25 @@ public class Bureaucratic extends SuperAgent{
         return session;
     }
 
+    public int[][] parseMap(String content, int dimx, int dimy){
+        int[][] map = new int[dimx][dimy];
+        JsonObject perceptionObject;
+        JsonArray array;
+        perceptionObject = Json.parse(content).asObject();
+
+        if(perceptionObject.get("map") != null){
+            array = perceptionObject.get("map").asArray();
+            int count=0;
+            for(int i = 0; i < dimx; i++){
+                for(int j = 0; j < dimy; j++){
+                    map[i][j] = array.get(count).asInt();
+                    count++;
+                }
+            }
+        }
+
+        return map;
+    }
 
     public static Bureaucratic getInstance() {
         if(INSTANCE==null){
@@ -159,9 +181,4 @@ public class Bureaucratic extends SuperAgent{
             mapSize = new Pair(dimxValue.asInt(),dimyValue.asInt());
        return mapSize;
     }
-
-    private void divideMap(Pair<Integer,Integer> map) {
-
-    }
- 
 }

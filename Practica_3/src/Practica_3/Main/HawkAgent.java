@@ -18,8 +18,8 @@ public class HawkAgent extends Agent{
     private int bounceAngle;
     Random rand = new Random();
 
-    public HawkAgent(String id, float fuel_limit) throws Exception {
-        super(id, AgentType.FLY, fuel_limit, 230, 100, 41);
+    public HawkAgent(String id, float fuel_limit, boolean debug) throws Exception {
+        super(id, AgentType.FLY, fuel_limit, 230, 100, 41, debug);
         bounceAngle = rand.nextInt(359);
     }
     

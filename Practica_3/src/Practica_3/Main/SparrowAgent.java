@@ -12,8 +12,8 @@ import com.sun.javafx.geom.Vec3d;
  * @author Alberto
  */
 public class SparrowAgent extends Agent {
-    public SparrowAgent(String id, float fuel_limit) throws Exception {
-        super(id, AgentType.FLY, fuel_limit, 240, 50, 11);
+    public SparrowAgent(String id, float fuel_limit, boolean debug) throws Exception {
+        super(id, AgentType.FLY, fuel_limit, 240, 50, 11, debug);
     }
     
     /**
