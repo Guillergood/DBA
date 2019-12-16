@@ -7,6 +7,7 @@ package Practica_3.Main;
 
 import DBA.SuperAgent;
 import Practica_3.Util.Logger;
+import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
 import es.upv.dsic.gti_ia.core.ACLMessage;
 import es.upv.dsic.gti_ia.core.AgentID;
@@ -88,7 +89,19 @@ public class Bureaucratic extends SuperAgent{
         
         
         
-    }  
+    }
+    
+    public String parseSession(String content){
+        JsonObject perceptionObject;
+        String session = null;
+        perceptionObject = Json.parse(content).asObject();
+        if(perceptionObject.get("session") != null){
+            session = perceptionObject.get("session").asString();
+        }
+        
+        return session;
+    }
+    
     
     public static Bureaucratic getInstance() {
         if(INSTANCE==null){
