@@ -94,15 +94,25 @@ public class Bureaucratic extends SuperAgent{
             if(informMessage.getPerformativeInt() == ACLMessage.INFORM){
                 continua = false;
                 String content = informMessage.getContent();
-                parseSession(content);
+                String session = parseSession(content);
                 Pair<Integer,Integer> dimensiones = parseDimensions(content);
                 parseMap(content);
-                //divideMap(dimensiones);
-                ACLMessage checkinMessage = new ACLMessage(ACLMessage.REQUEST);
-                JsonObject jsonMsg = new JsonObject();
-                jsonMsg.add("command", "login");
-                message.setContent(jsonMsg.toString());
-
+                
+                
+                jsonMsg = new JsonObject();
+                jsonMsg.add("session", session);
+                jsonMsg.add("dimx", dimensiones.getKey());
+                jsonMsg.add("dimy", dimensiones.getValue());
+                ACLMessage spreadInformation = new ACLMessage(ACLMessage.INFORM);
+                spreadInformation.setContent(jsonMsg.toString());
+                spreadInformation.setSender(this.getAid());
+                spreadInformation.setReceiver(new AgentID("Bellatrix"));
+                spreadInformation.addReceiver(new AgentID(names.get(0)));
+                spreadInformation.addReceiver(new AgentID(names.get(1)));
+                spreadInformation.addReceiver(new AgentID(names.get(2)));
+                spreadInformation.addReceiver(new AgentID(names.get(3)));
+                spreadInformation.setConversationId(informMessage.getConversationId());
+                send(spreadInformation);
 
             }
 
