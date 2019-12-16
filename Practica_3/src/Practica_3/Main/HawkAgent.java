@@ -5,7 +5,8 @@
  */
 package Practica_3.Main;
 
-import Practica_3.Util.Command;
+
+
 import Practica_3.Util.Command.Direction;
 import Practica_3.Util.IJsonSerializable;
 import com.sun.javafx.geom.Vec3d;
@@ -21,8 +22,9 @@ public class HawkAgent extends Agent{
     private int bounceAngle;
     Random rand = new Random();
 
-    public HawkAgent(String id, float fuel_limit) throws Exception {
-        super(id, AgentType.HAWK, fuel_limit, 230, 100, 41);
+
+    public HawkAgent(String id, float fuel_limit, boolean debug) throws Exception {
+        super(id, AgentType.FLY, fuel_limit, 230, 100, 41, debug);
         bounceAngle = rand.nextInt(359);
     }
     
@@ -62,7 +64,8 @@ public class HawkAgent extends Agent{
         // Sería conveniente hablar de cómo vamos a mandar replanificar.
         // Si llamamos a search desde aquí este método sería un void
         // Si no, tendríamos que devolver la nueva casilla
-        return command;
+
+        throw new UnsupportedOperationException("Paluego");
     }
     
     private boolean detectBorder() {

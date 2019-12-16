@@ -20,8 +20,8 @@ public class RescueAgent extends Agent{
     private final int MAX_CAPACITY;
     private int capacity;
 
-    public RescueAgent(String id, float fuel_limit) throws Exception {
-        super(id, AgentType.FLY, fuel_limit, 255, 1, 1);
+    public RescueAgent(String id, float fuel_limit, boolean debug) throws Exception {
+        super(id, AgentType.FLY, fuel_limit, 255, 1, 1, debug);
         MAX_CAPACITY = capacity = 10;
     }
     
