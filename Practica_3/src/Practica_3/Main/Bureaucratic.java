@@ -8,9 +8,13 @@ package Practica_3.Main;
 import DBA.SuperAgent;
 import Practica_3.Util.Logger;
 import com.eclipsesource.json.Json;
+import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.JsonValue;
 import es.upv.dsic.gti_ia.core.ACLMessage;
 import es.upv.dsic.gti_ia.core.AgentID;
+import java.util.ArrayList;
+import javafx.util.Pair;
 
 /**
  *
@@ -24,21 +28,31 @@ public class Bureaucratic extends SuperAgent{
     private final Logger LOGGER;
     private final static String VHOST = "Practica3";
     public final static String USER = "Backman";
-    public final static String PASSWORD = "BVgFPXaM"; 
-    
+    public final static String PASSWORD = "BVgFPXaM";
+    private ArrayList<String> names;
+
     private Bureaucratic(String name) throws Exception{
         super(new AgentID(name));
         LOGGER = new Logger(this);
+        names = new ArrayList<>();
+        names.add("MOGCA");
+        names.add("MOGCA_2");
+        names.add("ALCON");
+        names.add("REGCUE");
+        Agent.Factory.create(names.get(0), Agent.AgentType.FLY, zombie_count);
+        Agent.Factory.create(names.get(1), Agent.AgentType.FLY, zombie_count);
+        Agent.Factory.create(names.get(2), Agent.AgentType.HAWK, zombie_count);
+        Agent.Factory.create(names.get(3), Agent.AgentType.RESCUE, zombie_count);
     }
 
     @Override
     protected void execute() {
-        super.execute(); 
+        super.execute();
         //TODO
     }
-    
+
     /**
-     * <p> Send a message to the controller. </p>     
+     * <p> Send a message to the controller. </p>
      * @author Guillermo Bueno
      * @param recvId is the receiver id
      * @param performative is the variable as aspected
@@ -47,7 +61,7 @@ public class Bureaucratic extends SuperAgent{
      * @param convID is the conversation ID
      */
     public void sendMessage(String recvId, String performative, String content, String replyTo, String convID) {
-        ACLMessage outbox = new ACLMessage(); 
+        ACLMessage outbox = new ACLMessage();
         outbox.setSender(this.getAid());
         outbox.setReceiver(new AgentID("Bellatrix"));
         outbox.setPerformative(performative);
@@ -58,8 +72,8 @@ public class Bureaucratic extends SuperAgent{
             outbox.setConversationId(convID);
         this.send(outbox);
     }
-    
-    
+
+
     private boolean login() throws InterruptedException{
         boolean continua = true;
         while(continua){
@@ -69,28 +83,36 @@ public class Bureaucratic extends SuperAgent{
             jsonMsg.add("password", PASSWORD);
             ACLMessage message = new ACLMessage(ACLMessage.SUBSCRIBE);
             message.setContent(jsonMsg.toString());
+            message.setSender(this.getAid());
+            message.setReceiver(new AgentID("Bellatrix"));
+
+
             send(message);
 
-            ACLMessage checkin = receiveACLMessage();
-            
-            if(checkin.getPerformativeInt() == ACLMessage.INFORM){
+            ACLMessage informMessage = receiveACLMessage();
+
+            if(informMessage.getPerformativeInt() == ACLMessage.INFORM){
                 continua = false;
-                String content = checkin.getContent();
+                String content = informMessage.getContent();
                 parseSession(content);
-                parseDimensions(content);
+                Pair<Integer,Integer> dimensiones = parseDimensions(content);
                 parseMap(content);
-                divideMap();
-                sendDrones();
-                
+                //divideMap(dimensiones);
+                ACLMessage checkinMessage = new ACLMessage(ACLMessage.REQUEST);
+                JsonObject jsonMsg = new JsonObject();
+                jsonMsg.add("command", "login");
+                message.setContent(jsonMsg.toString());
+
+
             }
-            
+
         }
-        
-        
-        
-        
+
+
+
+
     }
-    
+
     public String parseSession(String content){
         JsonObject perceptionObject;
         String session = null;
@@ -98,11 +120,11 @@ public class Bureaucratic extends SuperAgent{
         if(perceptionObject.get("session") != null){
             session = perceptionObject.get("session").asString();
         }
-        
+
         return session;
     }
-    
-    
+
+
     public static Bureaucratic getInstance() {
         if(INSTANCE==null){
             String name = (zombie_count==0)?"Bureaucratic_B":"Bureaucratic_B_Z"+zombie_count;
@@ -115,6 +137,21 @@ public class Bureaucratic extends SuperAgent{
             }
         }
         return INSTANCE;
-    } 
+    }
+
+    private Pair<Integer,Integer> parseDimensions(String content) {
+       JsonObject perceptionObject;
+       perceptionObject = Json.parse(content).asObject();
+       JsonValue dimxValue = perceptionObject.get("dimx");
+       JsonValue dimyValue = perceptionObject.get("dimy");
+       Pair<Integer,Integer> mapSize = null;
+       if(dimxValue != null && dimyValue != null)
+            mapSize = new Pair(dimxValue.asInt(),dimyValue.asInt());
+       return mapSize;
+    }
+
+    private void divideMap(Pair<Integer,Integer> map) {
+
+    }
  
 }
