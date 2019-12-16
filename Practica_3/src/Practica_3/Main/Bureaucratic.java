@@ -8,9 +8,12 @@ package Practica_3.Main;
 import DBA.SuperAgent;
 import Practica_3.Util.Logger;
 import com.eclipsesource.json.Json;
+import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import es.upv.dsic.gti_ia.core.ACLMessage;
 import es.upv.dsic.gti_ia.core.AgentID;
+import java.util.ArrayList;
+import javafx.util.Pair;
 
 /**
  *
@@ -77,8 +80,9 @@ public class Bureaucratic extends SuperAgent{
                 continua = false;
                 String content = checkin.getContent();
                 parseSession(content);
-                parseDimensions(content);
-                parseMap(content);
+                Pair<Integer,Integer> dims = parseDimensions(content);
+                int[][] fullMap;
+                fullMap = parseMap(content, dims.getKey(), dims.getValue());
                 divideMap();
                 sendDrones();
                 
@@ -91,6 +95,8 @@ public class Bureaucratic extends SuperAgent{
         
     }
     
+    
+    
     public String parseSession(String content){
         JsonObject perceptionObject;
         String session = null;
@@ -102,6 +108,25 @@ public class Bureaucratic extends SuperAgent{
         return session;
     }
     
+    public int[][] parseMap(String content, int dimx, int dimy){
+        int[][] map = new int[dimx][dimy];
+        JsonObject perceptionObject;
+        JsonArray array;
+        perceptionObject = Json.parse(content).asObject();
+        
+        if(perceptionObject.get("map") != null){
+            array = perceptionObject.get("map").asArray();
+            int count=0;
+            for(int i = 0; i < dimx; i++){
+                for(int j = 0; j < dimy; j++){
+                    map[i][j] = array.get(count).asInt();
+                    count++;
+                }
+            }
+        }
+        
+        return map;
+    }
     
     public static Bureaucratic getInstance() {
         if(INSTANCE==null){
