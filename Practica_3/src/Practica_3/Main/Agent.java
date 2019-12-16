@@ -89,10 +89,26 @@ public abstract class Agent extends SuperAgent {
 
     /**
      * The way the agent goes
-     * Defines the new pseudo-objective the agent has to reach
-     * @return A position in the map (Vec3d)
+     * Decides the next action to perform, whether it is following
+     * the current plan, refueling or making a new plan and start 
+     * following it
+     * @return An IJsonSerializable
      */
-    protected abstract Vec3d chooseMovement();
+    protected abstract IJsonSerializable chooseMovement();
+    
+    /**
+     * Calculates a plan to refuel and go back where the agent was just before
+     */
+    protected void refuel() {
+        // Greedy para repostar, entrar en modo refuel
+    }
+    
+    /**
+     * When the agent is low on total fuel, goes home
+     */
+    protected void goHome() {
+        // search hacia el punto de partida
+    }
     
     /**
      * Updates the agent perception at demand

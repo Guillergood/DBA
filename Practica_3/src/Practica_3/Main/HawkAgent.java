@@ -5,6 +5,9 @@
  */
 package Practica_3.Main;
 
+import Practica_3.Util.Command;
+import Practica_3.Util.Command.Direction;
+import Practica_3.Util.IJsonSerializable;
 import com.sun.javafx.geom.Vec3d;
 import java.util.Random;
 
@@ -28,7 +31,7 @@ public class HawkAgent extends Agent{
      * @return The next action to perform
      */
     @Override
-    protected void chooseMovement() {
+    protected IJsonSerializable chooseMovement() {
         // Si se ha llamado a este método es que se han detectado los bordes del
         // mapa mientras se seguía el plan, por lo que hay que "rebotar"
         
@@ -38,7 +41,7 @@ public class HawkAgent extends Agent{
         
         //Move to perform:
         Vec3d place = null;
-        IJsonSerializable command
+        IJsonSerializable command = Direction.UP;
         
         if(gps.z != MAX_HEIGHT) {
             // Ascend
@@ -49,18 +52,17 @@ public class HawkAgent extends Agent{
             bounceAngle = -bounceAngle + rand.nextInt(15);
             
             // Replanificar con nueva posición
-            place = ...
         }
         
         // Refuel
         refuel();
         
         //search(place)
-        performMovement(command);
+        
         // Sería conveniente hablar de cómo vamos a mandar replanificar.
         // Si llamamos a search desde aquí este método sería un void
         // Si no, tendríamos que devolver la nueva casilla
-        //return place;
+        return command;
     }
     
     private boolean detectBorder() {
