@@ -181,28 +181,7 @@ public abstract class Agent extends SuperAgent {
         }*/
         AgentID sender = acl_msg.getSender();
         
-        if(sender.name.equals("Bellatrix")){
-            
-        }
-        else{
-            switch(sender){
-            case REQUEST:
-                break;
-            case QUERY_REF:
-                break;
-            case INFORM:
-                break;
-            case FAILURE:
-                break;
-            case AGREE:
-                break;
-            case NOT_UNDERSTOOD:
-                break;
-            default:
-                throw new RuntimeException("UNHANDLED PERFORMATIVE");
-         }
-        }
-        
+       
         
         
         
@@ -281,26 +260,7 @@ public abstract class Agent extends SuperAgent {
     
     // -----------------------
     //ENUMS
-    
-    public enum Performatives{
-        REQUEST(0, "request"), QUERY_REF(1,"query_ref"), INFORM(2,"inform"), SUBSCRIBE(3,"subscribe"), FAILURE(4,"failure"), AGREE(5,"agree"), NOT_UNDERSTOOD(6,"not_understood");
-        
-        private int number;
-        private String string;
-
-        private Performatives(int number, String string) {
-            this.number = number;
-            this.string = string;
-        }
-        public String getName(){
-            return string;
-        }
-        public int getNumber(){
-            return number;
-        }
-        
-        
-    }
+   
     
     public enum Status{
         IDLE, EXPLORING, EXPLORING_PLACE, GOING_RESCUE, GOING_HOME;
