@@ -19,7 +19,7 @@ public class HawkAgent extends Agent{
     Random rand = new Random();
 
     public HawkAgent(String id, float fuel_limit) throws Exception {
-        super(id, AgentType.FLY, fuel_limit, 230, 100, 41);
+        super(id, AgentType.HAWK, fuel_limit, 230, 100, 41);
         bounceAngle = rand.nextInt(359);
     }
     
@@ -28,7 +28,7 @@ public class HawkAgent extends Agent{
      * @return The next action to perform
      */
     @Override
-    protected Vec3d chooseMovement() {
+    protected void chooseMovement() {
         // Si se ha llamado a este método es que se han detectado los bordes del
         // mapa mientras se seguía el plan, por lo que hay que "rebotar"
         
@@ -38,6 +38,7 @@ public class HawkAgent extends Agent{
         
         //Move to perform:
         Vec3d place = null;
+        IJsonSerializable command
         
         if(gps.z != MAX_HEIGHT) {
             // Ascend
@@ -46,14 +47,20 @@ public class HawkAgent extends Agent{
         else if(detectBorder()) {
             // Bounce
             bounceAngle = -bounceAngle + rand.nextInt(15);
-            // Calcular posición de meta
+            
             // Replanificar con nueva posición
+            place = ...
         }
         
+        // Refuel
+        refuel();
+        
+        //search(place)
+        performMovement(command);
         // Sería conveniente hablar de cómo vamos a mandar replanificar.
         // Si llamamos a search desde aquí este método sería un void
         // Si no, tendríamos que devolver la nueva casilla
-        return place;
+        //return place;
     }
     
     private boolean detectBorder() {

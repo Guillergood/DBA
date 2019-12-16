@@ -64,6 +64,9 @@ public abstract class Agent extends SuperAgent {
      * @param id The agent ID
      * @param type The agent type (hawk, sparrow, fly or rescue)
      * @param f_limit The fuel limit of this unit
+     * @param height
+     * @param visibility
+     * @param range
      * @throws java.lang.Exception
      */
     protected Agent(String id, AgentType type, float f_limit, int height, int visibility, int range) throws Exception{  
