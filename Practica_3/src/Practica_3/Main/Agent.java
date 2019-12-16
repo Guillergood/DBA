@@ -16,6 +16,7 @@ import Practica_3.Util.Matrix;
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.JsonValue;
 import com.sun.javafx.geom.Vec3d;
 import es.upv.dsic.gti_ia.core.ACLMessage;
 import es.upv.dsic.gti_ia.core.AgentID;
@@ -25,6 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
+import javafx.util.Pair;
 
 /**
  *
@@ -40,7 +42,10 @@ public abstract class Agent extends SuperAgent {
     protected final int VISIBILITY;
     protected final int RANGE;
     protected final float FUEL_LIMIT;
+    protected final boolean DEBUG;
     private Status agentStatus;
+    private AgentID inReplyTo;
+    private String conversationId;
     
     // Map parameters
     protected Matrix<Integer> MAP_HEIGHT;
@@ -51,7 +56,7 @@ public abstract class Agent extends SuperAgent {
     protected Gonio mini_gonio;
     protected Matrix<Integer> infrared;
     protected Vec3d gps;
-    protected float fuel;
+    protected double fuel;
     protected ArrayList<AwacPart> awacs;
     protected boolean status;
     protected boolean goal;
@@ -72,7 +77,7 @@ public abstract class Agent extends SuperAgent {
      * @param f_limit The fuel limit of this unit
      * @throws java.lang.Exception
      */
-    protected Agent(String id, AgentType type, float f_limit, int height, int visibility, int range) throws Exception{  
+    protected Agent(String id, AgentType type, float f_limit, int height, int visibility, int range, boolean debug) throws Exception{  
         super(new AgentID(id));
         agent_type = type;
         FUEL_LIMIT = f_limit;
@@ -80,6 +85,7 @@ public abstract class Agent extends SuperAgent {
         MAX_HEIGHT = height;
         VISIBILITY = visibility;
         RANGE = range;
+        DEBUG = debug;
     }
 
     /**
@@ -98,10 +104,28 @@ public abstract class Agent extends SuperAgent {
     protected abstract IJsonSerializable chooseMovement();
     
     /**
+     * @author Guillermo Bueno
      * Updates the agent perception at demand
      */
     protected void updatePerception() {
-        throw new UnsupportedOperationException("Guille pa ti");
+        ACLMessage outbox = new ACLMessage(); 
+        outbox.setSender(this.getAid());
+        outbox.setReceiver(new AgentID("Bellatrix"));
+        outbox.setPerformative(ACLMessage.getPerformative(ACLMessage.QUERY_REF));
+        outbox.setContent("");
+        outbox.setReplyTo(inReplyTo);
+        outbox.setConversationId(conversationId);
+        this.send(outbox);
+        
+        try {
+            getMsg();
+        } catch (Exception e) {
+            if(DEBUG){
+                System.out.println(this.toString()+ " excepcion en el updatePerception");
+            }
+            e.printStackTrace();
+        }
+        
     }
     
     private void initializeMap(JsonObject jObject) throws InterruptedException{        
@@ -137,9 +161,10 @@ public abstract class Agent extends SuperAgent {
         super.execute();
         try {         
             //Step 1: Recibe First INFORM from Bureaucratic
-            String subscribeMsg = getMsg();            
-            JsonObject jObject = Json.parse(subscribeMsg).asObject();
+            ACLMessage subscribeRetMsg = receiveACLMessage();                        
+            JsonObject jObject = Json.parse(subscribeRetMsg.getContent()).asObject();
             session = jObject.get("session").asString();
+            conversationId = subscribeRetMsg.getConversationId();
             //Step 1.2: Initialize Map
             initializeMap(jObject);
             
@@ -285,6 +310,80 @@ public abstract class Agent extends SuperAgent {
     protected ArrayList<IJsonSerializable> search(Vec3d start, Vec3d end) {
         throw new UnsupportedOperationException("Luego lo hago");
     }
+    
+    
+    private void sensorsParser(String source){        
+        JsonObject perceptionObject;
+        perceptionObject = Json.parse(source).asObject();
+        JsonObject object = perceptionObject.get("perceptions").asObject();
+        
+        //System.out.println("\nperceptionObject: " + perceptionObject);
+        //System.out.println("\nobject: " + object);
+        
+        if(object.get("gps") != null){
+            //System.out.println("\nGPS cogido");
+            gps.set(object.get("gps").asObject().get("x").asInt(),object.get("gps").asObject().get("y").asInt(),object.get("gps").asObject().get("z").asInt());
+            //System.out.println("\nGPS es: "+ gps.toString());
+        }
+        
+        if(object.get("fuel") != null){
+            //System.out.println("\nFUEL cogido");
+            fuel = object.get("fuel").asDouble();
+            //System.out.println("\nFUEL es: "+ fuel);
+        }
+        
+        if(object.get("infrared") != null){
+            //System.out.println("\nINFRARED cogido");
+            JsonArray arrayInfrared = object.get("infrared").asArray();
+            
+            /*
+                Anotación:
+                Infrared siempre da la esquina noreste del dron(el cual no
+                tiene orientacion, siempre mira al norte).
+                La información se da en filas.
+            */
+            
+            for(JsonValue value:arrayInfrared)
+                for(int i = 0; i < dimY; ++i)
+                    for(int k = 0; k < dimX; ++k)
+                        infrared.set(k, i, value.asInt());
+            
+            
+            //System.out.println("\nINFRARED es: "+ torescue );
+        }
+        if(object.get("torescue") != null){
+            //System.out.println("\nTORESCUE cogido");
+            to_rescue = object.get("torescue").asInt();
+            
+            //System.out.println("\nTORESCUE es: "+ torescue );
+        }
+        if(object.get("status") != null){
+            //System.out.println("\nSTATUS cogido");
+            status = object.get("status").asString();
+            
+            //System.out.println("\nSTATUS es: "+ status );
+        }
+        if(object.get("goal") != null){
+            goal = object.get("goal").asBoolean();
+        }
+        if(object.get("energy") != null){
+            //System.out.println("\nENERGY cogido");
+            energy = object.get("energy").asDouble();
+            //System.out.println("\nENERGY es: "+ energy );
+        }
+        if(object.get("cancel") != null){
+            cancel = object.get("cancel").asBoolean();
+        }
+        if(object.get("gonio") != null ){
+            JsonObject gonioObject = object.get("gonio").asObject();
+            Float key = gonioObject.get("distance").asFloat();
+            Float value = gonioObject.get("angle").asFloat();
+            mini_gonio = new Gonio(key,value);
+        } 
+    }
+    
+    
+    
 
     /**
      * @author Bruno García Trípoli
@@ -369,7 +468,7 @@ public abstract class Agent extends SuperAgent {
     public static class Factory{
         private static Map<String,Integer> ZOMBIE_MAP = new HashMap<>();
        
-        public static Agent create(String name,AgentType type, float fuel_limit){
+        public static Agent create(String name,AgentType type, float fuel_limit, boolean debug){
             String final_name = name;
             if(ZOMBIE_MAP.containsKey(name))
                 final_name = name+"_Z"+ZOMBIE_MAP.get(name);
@@ -379,13 +478,13 @@ public abstract class Agent extends SuperAgent {
             try{                
                 switch(type){
                     case FLY:
-                        return new FlyAgent(final_name,fuel_limit);
+                        return new FlyAgent(final_name,fuel_limit,debug);
                     case SPARROW:
                         return null;
                     case HAWK:
-                        return new HawkAgent(final_name,fuel_limit);
+                        return new HawkAgent(final_name,fuel_limit,debug);
                     case RESCUE:
-                        return new RescueAgent(final_name,fuel_limit);
+                        return new RescueAgent(final_name,fuel_limit,debug);
                     default:
                         return null;
                 }
@@ -393,7 +492,7 @@ public abstract class Agent extends SuperAgent {
                 System.err.println(String.format("Agent with aid: \"%s\" already exist. Zombie Count increased, trying again...", final_name));
                 int count = ZOMBIE_MAP.get(name);
                 ZOMBIE_MAP.put(name, ++count);
-                return Factory.create(name,type,fuel_limit);
+                return Factory.create(name,type,fuel_limit,debug);
             }           
         }
     }   

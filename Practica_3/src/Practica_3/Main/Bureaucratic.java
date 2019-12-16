@@ -14,6 +14,7 @@ import com.eclipsesource.json.JsonValue;
 import es.upv.dsic.gti_ia.core.ACLMessage;
 import es.upv.dsic.gti_ia.core.AgentID;
 import java.util.ArrayList;
+import java.util.logging.Level;
 import javafx.util.Pair;
 
 /**
@@ -29,10 +30,20 @@ public class Bureaucratic extends SuperAgent{
     private final static String VHOST = "Practica3";
     public final static String USER = "Backman";
     public final static String PASSWORD = "BVgFPXaM";
+    private ArrayList<String> names;
 
     private Bureaucratic(String name) throws Exception{
         super(new AgentID(name));
         LOGGER = new Logger(this);
+        names = new ArrayList<>();
+        names.add("MOGCA");
+        names.add("MOGCA_2");
+        names.add("ALCON");
+        names.add("REGCUE");
+        Agent.Factory.create(names.get(0), Agent.AgentType.FLY, zombie_count,DEBUG);
+        Agent.Factory.create(names.get(1), Agent.AgentType.FLY, zombie_count,DEBUG);
+        Agent.Factory.create(names.get(2), Agent.AgentType.HAWK, zombie_count,DEBUG);
+        Agent.Factory.create(names.get(3), Agent.AgentType.RESCUE, zombie_count,DEBUG);
     }
 
     @Override
@@ -62,6 +73,7 @@ public class Bureaucratic extends SuperAgent{
             outbox.setConversationId(convID);
         this.send(outbox);
     }
+    
 
 
     private boolean login() throws InterruptedException{
@@ -80,14 +92,30 @@ public class Bureaucratic extends SuperAgent{
             if(checkin.getPerformativeInt() == ACLMessage.INFORM){
                 continua = false;
                 String content = checkin.getContent();
-                parseSession(content);
+                String session = parseSession(content);
                 Pair<Integer,Integer> dims = parseDimensions(content);
                 int[][] fullMap;
                 fullMap = parseMap(content, dims.getKey(), dims.getValue());
-                divideMap();
-                sendDrones();
+                
+                
+                jsonMsg = new JsonObject();
+                jsonMsg.add("session", session);
+                jsonMsg.add("dimx", dims.getKey());
+                jsonMsg.add("dimy", dims.getValue());
+                ACLMessage spreadInformation = new ACLMessage(ACLMessage.INFORM);
+                spreadInformation.setContent(jsonMsg.toString());
+                spreadInformation.setSender(this.getAid());
+                spreadInformation.setReceiver(new AgentID("Bellatrix"));
+                spreadInformation.addReceiver(new AgentID(names.get(0)));
+                spreadInformation.addReceiver(new AgentID(names.get(1)));
+                spreadInformation.addReceiver(new AgentID(names.get(2)));
+                spreadInformation.addReceiver(new AgentID(names.get(3)));
+                spreadInformation.setConversationId(checkin.getConversationId());
+                send(spreadInformation);
 
             }
+
+         
 
         }
 
