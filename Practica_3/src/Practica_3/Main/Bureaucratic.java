@@ -10,6 +10,7 @@ import Practica_3.Util.Logger;
 import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.JsonValue;
 import es.upv.dsic.gti_ia.core.ACLMessage;
 import es.upv.dsic.gti_ia.core.AgentID;
 import java.util.ArrayList;
@@ -27,8 +28,8 @@ public class Bureaucratic extends SuperAgent{
     private final Logger LOGGER;
     private final static String VHOST = "Practica3";
     public final static String USER = "Backman";
-    public final static String PASSWORD = "BVgFPXaM"; 
-    
+    public final static String PASSWORD = "BVgFPXaM";
+
     private Bureaucratic(String name) throws Exception{
         super(new AgentID(name));
         LOGGER = new Logger(this);
@@ -36,12 +37,12 @@ public class Bureaucratic extends SuperAgent{
 
     @Override
     protected void execute() {
-        super.execute(); 
+        super.execute();
         //TODO
     }
-    
+
     /**
-     * <p> Send a message to the controller. </p>     
+     * <p> Send a message to the controller. </p>
      * @author Guillermo Bueno
      * @param recvId is the receiver id
      * @param performative is the variable as aspected
@@ -50,7 +51,7 @@ public class Bureaucratic extends SuperAgent{
      * @param convID is the conversation ID
      */
     public void sendMessage(String recvId, String performative, String content, String replyTo, String convID) {
-        ACLMessage outbox = new ACLMessage(); 
+        ACLMessage outbox = new ACLMessage();
         outbox.setSender(this.getAid());
         outbox.setReceiver(new AgentID("Bellatrix"));
         outbox.setPerformative(performative);
@@ -61,8 +62,8 @@ public class Bureaucratic extends SuperAgent{
             outbox.setConversationId(convID);
         this.send(outbox);
     }
-    
-    
+
+
     private boolean login() throws InterruptedException{
         boolean continua = true;
         while(continua){
@@ -75,7 +76,7 @@ public class Bureaucratic extends SuperAgent{
             send(message);
 
             ACLMessage checkin = receiveACLMessage();
-            
+
             if(checkin.getPerformativeInt() == ACLMessage.INFORM){
                 continua = false;
                 String content = checkin.getContent();
@@ -85,18 +86,18 @@ public class Bureaucratic extends SuperAgent{
                 fullMap = parseMap(content, dims.getKey(), dims.getValue());
                 divideMap();
                 sendDrones();
-                
+
             }
-            
+
         }
-        
-        
-        
-        
+
+
+
+
     }
-    
-    
-    
+
+
+
     public String parseSession(String content){
         JsonObject perceptionObject;
         String session = null;
@@ -104,16 +105,16 @@ public class Bureaucratic extends SuperAgent{
         if(perceptionObject.get("session") != null){
             session = perceptionObject.get("session").asString();
         }
-        
+
         return session;
     }
-    
+
     public int[][] parseMap(String content, int dimx, int dimy){
         int[][] map = new int[dimx][dimy];
         JsonObject perceptionObject;
         JsonArray array;
         perceptionObject = Json.parse(content).asObject();
-        
+
         if(perceptionObject.get("map") != null){
             array = perceptionObject.get("map").asArray();
             int count=0;
@@ -124,10 +125,10 @@ public class Bureaucratic extends SuperAgent{
                 }
             }
         }
-        
+
         return map;
     }
-    
+
     public static Bureaucratic getInstance() {
         if(INSTANCE==null){
             String name = (zombie_count==0)?"Bureaucratic_B":"Bureaucratic_B_Z"+zombie_count;
@@ -140,6 +141,16 @@ public class Bureaucratic extends SuperAgent{
             }
         }
         return INSTANCE;
-    } 
- 
+    }
+
+    private Pair<Integer,Integer> parseDimensions(String content) {
+       JsonObject perceptionObject;
+       perceptionObject = Json.parse(content).asObject();
+       JsonValue dimxValue = perceptionObject.get("dimx");
+       JsonValue dimyValue = perceptionObject.get("dimy");
+       Pair<Integer,Integer> mapSize = null;
+       if(dimxValue != null && dimyValue != null)
+            mapSize = new Pair(dimxValue.asInt(),dimyValue.asInt());
+       return mapSize;
+    }
 }
