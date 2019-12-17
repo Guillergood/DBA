@@ -256,47 +256,59 @@ public abstract class Agent extends SuperAgent {
      * @throws InterruptedException
      * @return the content of message as String.
      */
-    private String getMsg() throws InterruptedException{
-         ACLMessage acl_msg = new ACLMessage();
-         acl_msg = this.receiveACLMessage();
-         /*Performatives performative = null;
-         try {
-            performative = Performatives.valueOf(acl_msg.getPerformative());
-            if(performative == null){
-                throw new  Exception("UNHANDLED PERFORMATIVE TRANSLATION");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }*/
-        AgentID sender = acl_msg.getSender();
+    private void getMsg() throws InterruptedException{
+        ACLMessage acl_msg;
+        acl_msg = receiveACLMessage();
         
-       
-        
-        
-        
-        
-         
-         /*switch(performative){
-            case REQUEST:
+        if(DEBUG){
+            System.out.println(toString() + " recibio -> " 
+                    + acl_msg.getPerformative() + " " 
+                    + acl_msg.getContent());
+        }  
+
+        switch(acl_msg.getPerformativeInt()){
+            // ESTA PARTE ESTA HECHA PARA QUE EL AGENTE RECIBA PETICION DEL
+            // BUREAUCRATIC
+            case ACLMessage.REQUEST:
                 break;
-            case QUERY_REF:
+            /* MENSAJES DEL CONTROLADOR, PUEDE SER:
+                - PERCEPCION.
+                - INFORMACION DEL REQUEST.
+                - QUE SE NOTIFIQUE ALEMAN DESDE NUESTROS DRONES
+                - TRAZA DE EJECUCIÓN (PREDECIDA POR UN AGREE)
+                NOTA: SUELE TENER UN CAMPO RESULT
+            */
+            case ACLMessage.INFORM:
                 break;
-            case INFORM:
+            // SOLO SE RECIBE CUANDO SE HACE UN CANCEL
+            // Y CUANDO EL AGENTE RECIBE LAS COORDENADAS DEL BUREAUCRATIC
+            // PARA INDICARLE QUE TODO ESTA CORRECTO.
+            case ACLMessage.AGREE:
                 break;
-            case FAILURE:
+            /* MENSAJES DE ERROR:
+                
+                NOTA: SUELE TENER UN CAMPO DETAILS, CON UNA RAZON DE EL ERROR.
+                HAY QUE JUGAR CON EL REPLY-WITH Y EL SENDER
+                AgentID sender = acl_msg.getSender();
+                String replyWith = acl_msg.getReplyWith();
+            */
+            case ACLMessage.NOT_UNDERSTOOD:
+            case ACLMessage.FAILURE:
+            case ACLMessage.REFUSE:
                 break;
-            case AGREE:
-                break;
-            case NOT_UNDERSTOOD:
-                break;
+                          
             default:
-                throw new RuntimeException("UNHANDLED PERFORMATIVE");
-         }*/
-         
+                throw new UnsupportedOperationException("PERFORMATIVA NO ACEPTADA: " 
+                        + acl_msg.getPerformative());
+        }
+        
+        
+   
+        
         
          
         
-         return acl_msg.getContent();
+         
     }
     
     
@@ -343,10 +355,7 @@ public abstract class Agent extends SuperAgent {
                 La información se da en filas.
             */
             
-            for(JsonValue value:arrayInfrared)
-                for(int i = 0; i < dimY; ++i)
-                    for(int k = 0; k < dimX; ++k)
-                        infrared.set(k, i, value.asInt());
+            infrared.foreach((x,y,v)-> arrayInfrared.get(x+y*RANGE).asInt());
             
             
             //System.out.println("\nINFRARED es: "+ torescue );
