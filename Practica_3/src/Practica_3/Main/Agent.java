@@ -285,23 +285,54 @@ public abstract class Agent extends SuperAgent {
             System.out.println(toString() + " recibio -> " 
                     + acl_msg.getPerformative() + " " 
                     + acl_msg.getContent());
-        }  
+        } 
+        
+        String contenido = acl_msg.getContent();
 
         switch(acl_msg.getPerformativeInt()){
             // ESTA PARTE ESTA HECHA PARA QUE EL AGENTE RECIBA PETICION DEL
             // BUREAUCRATIC
             case ACLMessage.REQUEST:
+                parseFirstMessage(contenido);
                 break;
             /* MENSAJES DEL CONTROLADOR, PUEDE SER:
                 - PERCEPCION.
-                - INFORMACION DEL REQUEST.
-                - QUE SE NOTIFIQUE ALEMAN DESDE NUESTROS DRONES
+                (EL NUMERO DE ELEMENTOS EN EL JSON ES 1: result:{...}).
+                - INFORMACION DEL REQUEST. 
+                (EL NUMERO DE ELEMENTOS EN EL JSON ES 1: result:{ok}).
+                
+                - QUE SE NOTIFIQUE ALEMAN DESDE NUESTROS DRONES. 
+                (EL NUMERO DE ELEMENTOS EN EL JSON ES 2: result e id).
+                
                 - TRAZA DE EJECUCIÓN (PREDECIDA POR UN AGREE)
-                NOTA: SUELE TENER UN CAMPO RESULT
+                
             */
             case ACLMessage.INFORM:
+                if(acl_msg.getSender().getLocalName().equalsIgnoreCase("Bellatrix")){
+                    int numberElements = numberElementsInContentMessage(contenido);
+                    
+                    if(numberElements > 1){
+                        if(numberElements == 2){
+                            //GERMAN SAVED
+                        }
+                        else if (numberElements == 5){
+                            //RESPUESTA DEL CHECKIN
+                        }
+                    }
+                    else{
+                        if(!emptyContentMessage(contenido)){
+                            sensorsParser(contenido);
+                        }
+                    }
+                }
+                else{
+                    germanFound(contenido);
+                }
+                
+                
                 break;
             // SOLO SE RECIBE CUANDO SE HACE UN CANCEL
+                //***************************//
             // Y CUANDO EL AGENTE RECIBE LAS COORDENADAS DEL BUREAUCRATIC
             // PARA INDICARLE QUE TODO ESTA CORRECTO.
             case ACLMessage.AGREE:
@@ -331,6 +362,46 @@ public abstract class Agent extends SuperAgent {
         
          
     }
+    /**
+     * Checks if the message sent has empty content
+     * 
+     * @param contenido Json to check
+     * @return Number of elements contained by the json.
+     */
+    private int numberElementsInContentMessage(String contenido) {
+        
+        int countJson = 0;
+        JsonArray jsonArray = Json.parse(contenido).asArray();
+        
+        
+        for(JsonValue algo:jsonArray){
+            countJson++;
+        }
+        
+        
+        return countJson;
+    }
+    
+    /**
+     * Checks if the message sent has empty content
+     * 
+     * @param contenido Json to check
+     * @return If has empty content or not.
+     */
+    private boolean emptyContentMessage(String contenido) {
+        
+        JsonObject perceptionObject;
+        perceptionObject = Json.parse(contenido).asObject();
+        String object = perceptionObject.get("result").asString();
+        
+        
+        
+        
+        return object.equalsIgnoreCase("ok");
+    }
+    
+    
+    
     
     
     /**
@@ -379,7 +450,7 @@ public abstract class Agent extends SuperAgent {
     private void sensorsParser(String source){        
         JsonObject perceptionObject;
         perceptionObject = Json.parse(source).asObject();
-        JsonObject object = perceptionObject.get("perceptions").asObject();
+        JsonObject object = perceptionObject.get("result").asObject();
         
         //System.out.println("\nperceptionObject: " + perceptionObject);
         //System.out.println("\nobject: " + object);
@@ -484,6 +555,8 @@ public abstract class Agent extends SuperAgent {
     
     // -----------------------
     //ENUMS
+
+
    
     
     public enum Status{
