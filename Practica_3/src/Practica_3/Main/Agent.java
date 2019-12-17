@@ -24,7 +24,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.ListIterator;
 import java.util.Map;
+import java.util.Stack;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 import javafx.util.Pair;
@@ -400,18 +402,15 @@ public abstract class Agent extends SuperAgent {
         return object.equalsIgnoreCase("ok");
     }
     
-    
-    
-    
-    
     /**
      * Finds the shortest path between two points with the Fringe Search algorithm
      * 
+     * @author Juan Ocaña Valenzuela
      * @param start The start point of the route
      * @param end The finish point
-     * @return The plan to follow
+     * @return The path to follow
      */
-    protected ArrayList<IJsonSerializable> search(Vec3d start, Vec3d end) {
+    protected Stack<Vec3d> search(Vec3d start, Vec3d end) {
         // The list of exploring/explored nodes
         LinkedList<Vec3d> nodes = new LinkedList();
         // The cached cost of each node
@@ -428,11 +427,107 @@ public abstract class Agent extends SuperAgent {
         
         while(!nodes.isEmpty() && !found) {
             Double fmin = Double.POSITIVE_INFINITY;
+            // Iterate the list until it reaches the end
+            ListIterator it = nodes.listIterator();
             
+            while(it.hasNext()) {
+                Vec3d current = (Vec3d)it.next();
+                
+                // Check if the current node is evaluable or is the goal
+                // G and F values
+                double g = cache.get(current).getKey();
+                double f = g + h(current, end);
+                
+                if(f > flimit) {
+                    fmin = Math.min(f, fmin);
+                    continue;
+                }
+                
+                if(current.equals(end)) {
+                    found = true;
+                    break;
+                }
+                
+                // If it's good, we expand it
+                for(int i = -1; i <= 1; ++i) {
+                    for(int j = -1; j <= 1; ++j) {
+                        // The child
+                        Vec3d child = new Vec3d(current.x + i, current.y + j, current.z);
+                        
+                        // If we are checking the current one, continue
+                        if(child.equals(current))
+                            continue;
+                        
+                        // Cost of the child
+                        double g_child = g + cost(child);
+                        
+                        // If g is cached we check it
+                        if(cache.get(child) != null) {
+                            double g_cached = cache.get(child).getKey();
+                            // If previous paths were better, we don't care
+                            // about this one
+                            if(g_cached <= g_child)
+                                continue;
+                        }
+                        
+                        // If child is already in the list, we remove it
+                        nodes.remove(child);
+                        
+                        // Insert the child in the list and updates the cache
+                        nodes.add(child);
+                        cache.put(child, new Pair(g_child, current));
+                    }
+                }
+                
+                // Remove this node from the list
+                nodes.remove(current);
+            }
+            
+            // Update the fringe
+            flimit = fmin;
         }
+        
+        // Once finished, returns the path to follow
+        Stack path = new Stack();  
+        reversePath(end, cache, path);
+        return path;
         
     }
 
+    /**
+     * Recursively creates an ordered path given the end node and its
+     * correspondant parent's hash map
+     * @author Juan Ocaña Valenzuela
+     * @param node the end node
+     * @param cache the hash map which contains the tree relationship
+     * @param plan A reference to a stack
+     */
+    private void reversePath(Vec3d node, HashMap<Vec3d, Pair<Integer, Vec3d>> cache, Stack<Vec3d> plan) {
+        Vec3d parent = cache.get(node).getValue();
+        if(parent != null) {
+            plan.push(node);
+            reversePath(parent, cache, plan);
+        }
+    }
+
+    /**
+     * Cost of a move
+     * @return 1 if the position is viable, INFINITY if not
+     */
+    private double cost(Vec3d pos) {
+        if
+        (
+           // If the position is over the map limits
+           pos.x < 0 || pos.x > map_explored.getColsNum() ||
+           pos.y < 0 || pos.y > map_explored.getColsNum() ||
+           // If the position is below the floor
+           pos.z < MAP_HEIGHT.get((int)pos.x, (int)pos.y)
+        )
+            return Double.POSITIVE_INFINITY;
+        else
+            return 1;
+    }
+    
     /**
      * Heuristic
      * The linear distance between two points
