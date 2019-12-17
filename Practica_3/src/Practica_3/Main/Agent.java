@@ -23,6 +23,7 @@ import es.upv.dsic.gti_ia.core.AgentID;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
@@ -340,7 +341,38 @@ public abstract class Agent extends SuperAgent {
      * @return The plan to follow
      */
     protected ArrayList<IJsonSerializable> search(Vec3d start, Vec3d end) {
-        throw new UnsupportedOperationException("Luego lo hago");
+        // The list of exploring/explored nodes
+        LinkedList<Vec3d> nodes = new LinkedList();
+        // The cached cost of each node
+        HashMap<Vec3d, Pair<Integer, Vec3d>> cache = new HashMap();
+        // The current fringe value
+        double flimit = h(start, end);
+        // The current status of the search
+        boolean found = false;
+        
+        // Introduce the start node into nodes and put it into the cache
+        nodes.add(start);
+        cache.put(start, new Pair(0, null));
+        
+        
+        while(!nodes.isEmpty() && !found) {
+            Double fmin = Double.POSITIVE_INFINITY;
+            
+        }
+        
+    }
+
+    /**
+     * Heuristic
+     * The linear distance between two points
+     * @param start
+     * @param end
+     * @return 
+     */
+    private double h(Vec3d pointA, Vec3d pointB) {
+        return Math.sqrt(((pointA.x)-(pointB.x))*((pointA.x)-(pointB.x)) +
+                         ((pointA.y)-(pointB.y))*((pointA.y)-(pointB.y)) +
+                         ((pointA.z)-(pointB.z))*((pointA.z)-(pointB.z)));
     }
     
     
