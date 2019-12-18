@@ -54,6 +54,7 @@ public abstract class Agent extends SuperAgent {
     protected Matrix<Integer> MAP_HEIGHT;
     protected Matrix<Double> map_explored;
     protected Vec3d init_pos;
+    protected MapPiece piece;
     
     // Perception parameters
     protected Gonio mini_gonio;
@@ -375,6 +376,22 @@ public abstract class Agent extends SuperAgent {
         
          
     }
+    
+    private void parseFirstMessage(String source) {
+        JsonObject object;
+        object = Json.parse(source).asObject();      
+
+        // Map piece
+        piece = MapPiece.valueOf(object.get("mapPiece").asString());
+        
+        // Map dimensions
+        // Hay que poner esto en algún lado
+        
+        // Start point 
+        
+    }
+    
+    
     /**
      * Checks if the message sent has empty content
      * 
@@ -531,6 +548,7 @@ public abstract class Agent extends SuperAgent {
            // If the position is over the map limits
            pos.x < 0 || pos.x > map_explored.getColsNum() ||
            pos.y < 0 || pos.y > map_explored.getColsNum() ||
+           pos.z > MAX_HEIGHT ||
            // If the position is below the floor
            pos.z < MAP_HEIGHT.get((int)pos.x, (int)pos.y)
         )
@@ -661,12 +679,13 @@ public abstract class Agent extends SuperAgent {
     
     // -----------------------
     //ENUMS
-
-
-   
     
     public enum Status{
         IDLE, EXPLORING, EXPLORING_PLACE, GOING_RESCUE, GOING_HOME;
+    }
+    
+    public enum MapPiece {
+        UPPER, LOWER, FULL;
     }
     
     public enum AgentType{
