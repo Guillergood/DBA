@@ -15,6 +15,7 @@ import es.upv.dsic.gti_ia.core.ACLMessage;
 import es.upv.dsic.gti_ia.core.AgentID;
 import java.util.ArrayList;
 import java.util.logging.Level;
+import java.util.stream.Stream;
 import javafx.util.Pair;
 
 /**
@@ -30,7 +31,9 @@ public class Bureaucratic extends SuperAgent{
     private final static String VHOST = "Practica3";
     public final static String USER = "Backman";
     public final static String PASSWORD = "BVgFPXaM";
+    public final static String MAP_NAME = "playground";
     private ArrayList<String> names;
+    private Agent[] agents = new Agent[4];
 
     private Bureaucratic(String name) throws Exception{
         super(new AgentID(name));
@@ -49,9 +52,53 @@ public class Bureaucratic extends SuperAgent{
     @Override
     protected void execute() {
         super.execute();
-        //TODO
+        ACLMessage result = suscribe();
+        createAgents();
+        checkInAgents();
+        waitStop();
+    }
+    
+    public ACLMessage suscribe(){
+        ACLMessage result = null;
+        do{
+            JsonObject jsonMsg = new JsonObject();
+            jsonMsg.add("map", MAP_NAME);
+            jsonMsg.add("user", USER);
+            jsonMsg.add("password", PASSWORD);
+            this.sendMessage(ACLMessage.SUBSCRIBE, jsonMsg.asString(), new AgentID("Bellatrix"));
+            try {
+                result = this.getMsg();
+            } catch (InterruptedException ex) {
+                java.util.logging.Logger.getLogger(Bureaucratic.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }while(result.getPerformativeInt()!=ACLMessage.INFORM);
+        return result;
     }
 
+    public void createAgents(){
+        throw new UnsupportedOperationException("TODO");
+    }
+    
+    public void checkInAgents(){
+        throw new UnsupportedOperationException("TODO");
+    }
+    public void waitStop(){
+        throw new UnsupportedOperationException("TODO");
+    }
+    
+    @Override
+    protected void sendMessage(Integer performative, String content, AgentID receiver){
+        ACLMessage outbox = new ACLMessage();
+        outbox.setSender(this.getAid());
+        outbox.addReceiver(receiver);
+        outbox.setPerformative(performative);
+        outbox.setContent(content);
+        if(DEBUG)
+            LOGGER.printACLMessage(outbox);
+        //super.sendMessage(performative, content, receiver);
+        this.send(outbox);
+    }
+    
     /**
      * <p> Send a message to the controller. </p>
      * @author Guillermo Bueno
@@ -73,9 +120,23 @@ public class Bureaucratic extends SuperAgent{
             outbox.setConversationId(convID);
         this.send(outbox);
     }
+
+    /**
+     * <p> Get a message from controller and return the content. </p>     
+     * @author Guillermo Bueno
+     * @author Bruno García Trípoli
+     * @throws InterruptedException
+     * @return the content of message as String.
+     */
+    private ACLMessage getMsg() throws InterruptedException{
+        ACLMessage acl_msg = receiveACLMessage();        
+        
+        if(DEBUG)
+            LOGGER.printACLMessage(acl_msg);
+        
+        return acl_msg;
+    }
     
-
-
     private boolean login() throws InterruptedException{
         boolean continua = true;
         while(continua){
@@ -119,12 +180,10 @@ public class Bureaucratic extends SuperAgent{
 
         }
 
-
+        
 
 
     }
-
-
 
     public String parseSession(String content){
         JsonObject perceptionObject;
