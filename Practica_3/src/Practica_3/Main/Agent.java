@@ -65,6 +65,8 @@ public abstract class Agent extends SuperAgent {
     protected ArrayList<AwacPart> awacs;
     protected boolean status;
     protected boolean goal;
+    protected double energy;
+    protected boolean cancel;
     
     // Tourists remaining
     private int to_rescue;
@@ -555,13 +557,13 @@ public abstract class Agent extends SuperAgent {
         if(object.get("goal") != null)
             goal = object.get("goal").asBoolean();
         
-        /*
+        
         if(object.get("energy") != null)
             energy = object.get("energy").asDouble();
         
         if(object.get("cancel") != null)
             cancel = object.get("cancel").asBoolean();        
-        */
+        
         if(object.get("gonio") != null ){
             JsonObject gonioObject = object.get("gonio").asObject();
             Float key = gonioObject.get("distance").asFloat();
