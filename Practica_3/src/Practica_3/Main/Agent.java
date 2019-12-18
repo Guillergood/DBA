@@ -41,9 +41,9 @@ public abstract class Agent extends SuperAgent {
     private String id;
     private String session;
     private final AgentType agent_type;
-    protected final int MAX_HEIGHT;
-    protected final int VISIBILITY;
-    protected final int RANGE;
+    protected int MAX_HEIGHT;
+    protected int VISIBILITY;
+    protected int RANGE;
     protected final float FUEL_LIMIT;
     protected final boolean DEBUG;
     private Status agentStatus;
@@ -316,9 +316,20 @@ public abstract class Agent extends SuperAgent {
                     if(numberElements > 1){
                         if(numberElements == 2){
                             //GERMAN SAVED
+                            if(DEBUG){
+                                JsonObject object = Json.parse(contenido).asObject();
+                                System.out.println("SALVADO " + object.get("id"));
+                            }
                         }
                         else if (numberElements == 5){
                             //RESPUESTA DEL CHECKIN
+                            JsonObject object = Json.parse(contenido).asObject();
+                            if(DEBUG){
+                                
+                                System.out.println("Respuesta del checkin");
+                            }
+                            
+                            MAX_HEIGHT = object.
                         }
                     }
                     else{
