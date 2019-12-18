@@ -54,7 +54,11 @@ public class Bureaucratic extends SuperAgent{
         createAgents();
         sendSubscribe(result);
         checkInAgents();
-        waitStop();
+        try {
+            waitStop();
+        } catch (InterruptedException ex) {
+            java.util.logging.Logger.getLogger(Bureaucratic.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     public ACLMessage suscribe(){
