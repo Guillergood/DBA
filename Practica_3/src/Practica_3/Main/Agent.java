@@ -45,12 +45,13 @@ public abstract class Agent extends SuperAgent {
     protected int VISIBILITY;
     protected int RANGE;
     protected final float FUEL_LIMIT;
+    protected float fuelRemaining;
     protected final boolean DEBUG;
-    private Status agentStatus;
+    protected Status agentStatus;
     private AgentID inReplyTo;
     private String conversationId;
     private AgentID bureaucraticID;
-    
+
     // Map parameters
     protected Matrix<Integer> MAP_HEIGHT;
     protected Matrix<Double> map_explored;
@@ -70,6 +71,9 @@ public abstract class Agent extends SuperAgent {
     
     // Tourists remaining
     private int to_rescue;
+    
+    // Plan
+    protected Stack<Vec3d> plan;
 
     // Logger
     protected final Logger LOGGER;
@@ -510,7 +514,7 @@ public abstract class Agent extends SuperAgent {
         )
             return Double.POSITIVE_INFINITY;
         else
-            return 1;
+            return (map_explored.get((int)pos.x, (int)pos.y) + 1);
     }
     
     /**
@@ -520,7 +524,7 @@ public abstract class Agent extends SuperAgent {
      * @param end
      * @return 
      */
-    private double h(Vec3d pointA, Vec3d pointB) {
+    protected double h(Vec3d pointA, Vec3d pointB) {
         return Math.sqrt(((pointA.x)-(pointB.x))*((pointA.x)-(pointB.x)) +
                          ((pointA.y)-(pointB.y))*((pointA.y)-(pointB.y)) +
                          ((pointA.z)-(pointB.z))*((pointA.z)-(pointB.z)));
@@ -611,11 +615,15 @@ public abstract class Agent extends SuperAgent {
     //ENUMS
 
     public enum Status{
-        IDLE, EXPLORING, EXPLORING_PLACE, GOING_RESCUE, GOING_HOME;
+        IDLE, EXPLORING, REFUEL, GOING_RESCUE, GOING_HOME;
     }
     
     public enum MapPiece {
         UPPER, LOWER, FULL;
+    }
+    
+    public enum Bounce {
+        UP, RIGHT, DOWN, LEFT;
     }
     
     public enum AgentType{

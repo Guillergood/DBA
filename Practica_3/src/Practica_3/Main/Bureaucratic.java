@@ -39,15 +39,15 @@ public class Bureaucratic extends SuperAgent{
     private Agent[] agents = new Agent[4];
     private String session;
     private String convID;
-    
+
 
     private Bureaucratic(String name) throws Exception{
         super(new AgentID(name));
         LOGGER = new Logger(this);
         names = new ArrayList<>();
     }
-    
-    
+
+
 
     @Override
     protected void execute() {
@@ -56,9 +56,13 @@ public class Bureaucratic extends SuperAgent{
         ACLMessage result = suscribe();
         createAgents();
         checkInAgents(result);
-        waitStop();
+        try {
+            waitStop();
+        } catch (InterruptedException ex) {
+            java.util.logging.Logger.getLogger(Bureaucratic.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
-    
+
     public ACLMessage suscribe(){
         ACLMessage result = null;
         do{
@@ -107,14 +111,14 @@ public class Bureaucratic extends SuperAgent{
             ACLMessage recieveACLMessage = null;
             result.setReceiver(agent.getAid());
             result.setSender(this.getAid());
+            //Send suscribe
             send(result);
             do{
                 JsonObject jsonObject = new JsonObject();
-                ACLMessage acl_msg = new ACLMessage();
-                acl_msg.addReceiver(agent.getAid());
                 jsonObject.add("x", x);
                 jsonObject.add("y", y);
-                acl_msg.setContent(jsonObject.toString());
+                
+                this.sendMessage(ACLMessage.REQUEST, jsonObject.toString(), agent.getAid());
                 
                 try {
                     recieveACLMessage = getMsg();
@@ -129,23 +133,85 @@ public class Bureaucratic extends SuperAgent{
         }
         
     }
-    public void waitStop(){
-        
+    public void waitStop() throws InterruptedException{
+        ArrayList<AgentID> agentes = new ArrayList<>();
+        boolean trash;
+        int stopCounter = 0;
+        JsonObject perceptionObject;
+        while(stopCounter < 4){
+            trash=false;
+            ACLMessage acl_msg = receiveACLMessage();
+            if(DEBUG)
+                LOGGER.printACLMessage(acl_msg);
+
+            if(acl_msg.getPerformativeInt() == ACLMessage.REQUEST){
+                perceptionObject = Json.parse(acl_msg.getContent()).asObject();
+                String object = perceptionObject.get("command").asString();
+
+                if(object.equals("stop")){
+
+                    for(int i =0;i<agentes.size();i++){
+                        if(acl_msg.getReceiver() == agentes.get(i)){
+                            trash=true;
+                        }
+                    }
+                    if(!trash){
+                        agentes.add(acl_msg.getReceiver());
+                        stopCounter++;
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
+    protected void sendMessage(Integer performative, String content, AgentID receiver){
+        ACLMessage outbox = new ACLMessage();
+        outbox.setSender(this.getAid());
+        outbox.addReceiver(receiver);
+        outbox.setPerformative(performative);
+        outbox.setContent(content);
+        if(DEBUG)
+            LOGGER.printACLMessage(outbox);
+        //super.sendMessage(performative, content, receiver);
+        this.send(outbox);
     }
 
     /**
-     * <p> Get a message from controller and return the content. </p>     
+     * <p> Send a message to the controller. </p>
+     * @author Guillermo Bueno
+     * @param recvId is the receiver id
+     * @param performative is the variable as aspected
+     * @param content is the content of the message
+     * @param replyTo is to whom the message was sent
+     * @param convID is the conversation ID
+     */
+    public void sendMessage(String recvId, String performative, String content, String replyTo, String convID) {
+        ACLMessage outbox = new ACLMessage();
+        outbox.setSender(this.getAid());
+        outbox.setReceiver(new AgentID("Bellatrix"));
+        outbox.setPerformative(performative);
+        outbox.addReceiver(new AgentID(recvId));
+        outbox.setInReplyTo(replyTo);
+        outbox.setContent(content);
+        if(convID != null)
+            outbox.setConversationId(convID);
+        this.send(outbox);
+    }
+
+    /**
+     * <p> Get a message from controller and return the content. </p>
      * @author Guillermo Bueno
      * @author Bruno García Trípoli
      * @throws InterruptedException
      * @return the content of message as String.
      */
     private ACLMessage getMsg() throws InterruptedException{
-        ACLMessage acl_msg = receiveACLMessage();        
-        
+        ACLMessage acl_msg = receiveACLMessage();
+
         if(DEBUG)
             LOGGER.printACLMessage(acl_msg);
-        
+
         return acl_msg;
     }
    
@@ -211,5 +277,5 @@ public class Bureaucratic extends SuperAgent{
         LOGGER.printACLMessage(result);
         super.send(result);
     }
-    
+
 }
