@@ -19,13 +19,13 @@ import java.util.Random;
 public class HawkAgent extends Agent{
     
     // Bounce values
-    private int bounceAngle;
+    private Bounce bounceDir;
     Random rand = new Random();
 
 
     public HawkAgent(String id, float fuel_limit, boolean debug) throws Exception {
         super(id, AgentType.FLY, fuel_limit, 230, 100, 41, debug);
-        bounceAngle = rand.nextInt(359);
+        bounceDir = Bounce.UP;
     }
     
     /**
@@ -34,43 +34,142 @@ public class HawkAgent extends Agent{
      */
     @Override
     protected IJsonSerializable chooseMovement() {
-        // Si se ha llamado a este método es que se han detectado los bordes del
-        // mapa mientras se seguía el plan, por lo que hay que "rebotar"
-        
-        // Para rebotar hay que intentar definir el ángulo opuesto al que se seguía
-        // con una mutación ligera pseudoaleatoria, elegir una casilla del borde del mapa
-        // en esa dirección y mandar al algoritmo a buscar un plan.
+    /*
+        Bounce es un enum que he creado en Agent, que representa los límites de la 
+        zona de exploración. En este caso simbolizaría esto:
+
+                UP
+              -------
+              -     -
+        LEFT  -     -  RIGHT
+              -------
+               DOWN
+
+        ***** EL ALGORITMO *****
+        Para simplificar la forma de rebotar, se elige de entre los límites de
+        exploración un borde aleatorio. Se elige una casilla aleatoria perteneciente
+        al mismo, y se realiza un plan hacia dicha casilla. Si no es posible, se vuelve
+        a generar un aleatorio.
+
+        Una vez finalizado el plan, se elige una casilla del siguiente borde en sentido
+        horario.
+    */
         
         //Move to perform:
         Vec3d place = null;
-        IJsonSerializable command = Direction.UP;
+        IJsonSerializable command = null;
         
-        if(gps.z != MAX_HEIGHT) {
-            // Ascend
-            place = new Vec3d(gps.x, gps.y, MAX_HEIGHT);
-        }
-        else if(detectBorder()) {
-            // Bounce
-            bounceAngle = -bounceAngle + rand.nextInt(15);
+        if(!plan.isEmpty()) {
+            // Pop the cell to reach
+            place = plan.pop();
             
-            // Replanificar con nueva posición
+            // MODE: EXPLORING
+            if(agentStatus == Status.EXPLORING) {
+                // If fuel warning, change mode to refuel
+                if(fuel <= (2 * MAP_HEIGHT.get((int)place.x, (int)place.y) + 2)) {
+                    agentStatus = Status.REFUEL;
+                }
+                // If global fuel warning, go home
+                else if(fuelRemaining <= 1.5 * h(gps, init_pos)) {
+                    plan = search(gps,init_pos);
+                    agentStatus = Status.GOING_HOME;
+                }
+                // Else, move to the next cell in the plan
+                else {
+                    command = move(place);
+                }
+            }
+            // MODE: GOING_HOME
+            else if(agentStatus == Status.GOING_HOME) {
+                // Come back home directly
+                command = move(place);
+            }
         }
-        
-        // Refuel
-        refuel();
-        
-        //search(place)
-        
-        // Sería conveniente hablar de cómo vamos a mandar replanificar.
-        // Si llamamos a search desde aquí este método sería un void
-        // Si no, tendríamos que devolver la nueva casilla
+        // MODE: IDLE
+        else {
+            // If the hawk is not at max height, plan to ascend
+            if(gps.z != MAX_HEIGHT) {
+                plan = search(gps, new Vec3d(gps.x, gps.y, MAX_HEIGHT));
+            }
+            // If it is already at max height, plan to bounce
+            else {
+                plan = search(gps, bounce());
+            }
+            
+            // Go explore
+            agentStatus = Status.EXPLORING;
+        }
 
-        throw new UnsupportedOperationException("Paluego");
+        return command;
     }
     
-    private boolean detectBorder() {
-        return (gps.x <= RANGE || gps.x >= map_explored.getColsNum() - RANGE ||
-                gps.y <= RANGE || gps.y >= map_explored.getRowsNum() - RANGE);
+    /**
+     * Picks the next direction to move, "bouncing" in the exploration area
+     * @return the new objective
+     */
+    private Vec3d bounce() {
+        // Change bounce value in clockwise order and choose a new objective
+        Vec3d obj = null;
+        
+        
+        switch(bounceDir) {
+            case UP:
+                bounceDir = Bounce.RIGHT;
+                obj = new Vec3d(MAP_HEIGHT.getRowsNum() - RANGE, rand.nextInt(MAP_HEIGHT.getRowsNum() - 2*RANGE) + RANGE, gps.z);
+                break;
+            case RIGHT:
+                bounceDir = Bounce.DOWN;
+                obj = new Vec3d(rand.nextInt(MAP_HEIGHT.getColsNum() - 2*RANGE) + RANGE, MAP_HEIGHT.getColsNum() - RANGE,  gps.z);
+                break;
+            case DOWN:
+                bounceDir = Bounce.LEFT;
+                obj = new Vec3d(RANGE, rand.nextInt(MAP_HEIGHT.getRowsNum() - 2*RANGE) + RANGE, gps.z);
+                break;
+            case LEFT:
+                bounceDir = Bounce.UP;
+                obj = new Vec3d(rand.nextInt(MAP_HEIGHT.getColsNum() - 2*RANGE) + RANGE, RANGE,  gps.z);
+                break;
+        }
+     
+        return obj;  
+    }
+    
+    // Calculates the next command to reach an adjacent position
+    private Direction move(Vec3d pos) {
+        Direction dir = null;
+        
+        // MoveN
+        if(gps.x == pos.x && gps.y > pos.y && gps.z == pos.z)
+            dir = Direction.NORTH;
+        // MoveNE
+        else if(gps.x < pos.x && gps.y > pos.y && gps.z == pos.z)
+            dir = Direction.NORTHEAST;
+        // MoveE
+        else if(gps.x < pos.x && gps.y == pos.y && gps.z == pos.z)
+            dir = Direction.EAST;
+        // MoveSE
+        else if(gps.x < pos.x && gps.y < pos.y && gps.z == pos.z)
+            dir = Direction.SOUTHEAST;
+        // MoveS
+        else if(gps.x == pos.x && gps.y < pos.y && gps.z == pos.z)
+            dir = Direction.SOUTH;
+        // MoveSW
+        else if(gps.x > pos.x && gps.y < pos.y && gps.z == pos.z)
+            dir = Direction.SOUTHWEST;
+        // MoveW
+        else if(gps.x > pos.x && gps.y == pos.y && gps.z == pos.z)
+            dir = Direction.WEST;
+        // MoveNW
+        else if(gps.x > pos.x && gps.y > pos.y && gps.z == pos.z)
+            dir = Direction.NORTHWEST;
+        // MoveUP
+        else if(gps.x == pos.x && gps.y == pos.y && gps.z < pos.z)
+            dir = Direction.UP;
+        // MoveDW
+        else if(gps.x == pos.x && gps.y == pos.y && gps.z > pos.z)
+            dir = Direction.DOWN;
+        
+        return dir;
     }
     
     // No sé si devolver un booleano o la posición del alemán, mañana vemos
