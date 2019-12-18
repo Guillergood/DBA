@@ -20,6 +20,9 @@ import com.eclipsesource.json.JsonValue;
 import com.sun.javafx.geom.Vec3d;
 import es.upv.dsic.gti_ia.core.ACLMessage;
 import es.upv.dsic.gti_ia.core.AgentID;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -181,8 +184,33 @@ public abstract class Agent extends SuperAgent {
         
     }
     
-    private void getTrace(){
-        throw new UnsupportedOperationException("Guille pa ti");
+    private boolean getTrace() throws FileNotFoundException, IOException{
+        try {
+            //System.out.println("Recibiendo traza");
+            ACLMessage newIn = this.receiveACLMessage();
+            JsonObject injson = Json.parse(newIn.getContent()).asObject();
+
+
+            if(injson.get("result").asString().equals("ok")){
+                ACLMessage finalMsg = this.receiveACLMessage();
+                JsonObject finalJson = Json.parse(finalMsg.getContent()).asObject();
+                JsonArray ja = finalJson.get("trace").asArray();
+
+                byte data[] = new byte [ja.size()];
+                for( int i= 0; i<data.length; i++){
+                    data[i] = (byte) ja.get(i).asInt();
+                }
+                FileOutputStream fos = new FileOutputStream("mitraza.png");
+                fos.write(data);
+                fos.close();
+            }
+            System.out.println(injson);
+            System.out.println("Traza guardada");
+            return true;
+        } catch (InterruptedException | IOException ex) {
+            ex.printStackTrace();
+        }
+        return false;
     }
     
     /**
