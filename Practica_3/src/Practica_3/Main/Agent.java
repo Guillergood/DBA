@@ -41,9 +41,9 @@ public abstract class Agent extends SuperAgent {
     private String id;
     private String session;
     private final AgentType agent_type;
-    protected final int MAX_HEIGHT;
-    protected final int VISIBILITY;
-    protected final int RANGE;
+    protected int MAX_HEIGHT;
+    protected int VISIBILITY;
+    protected int RANGE;
     protected final float FUEL_LIMIT;
     protected final boolean DEBUG;
     private Status agentStatus;
@@ -128,21 +128,30 @@ public abstract class Agent extends SuperAgent {
         // search hacia el punto de partida
     }
 
+    protected void getAlemanPerception(ACLMessage msg){
+        throw new UnsupportedOperationException("Overload this on Rescue");
+    }
     
     /**
      * @author Guillermo Bueno
      * @author Bruno García Trípoli
      * Updates the agent perception at demand
      */
-    protected void updatePerception() {        
-        this.sendMessage(ACLMessage.QUERY_REF, "", new AgentID("Bellatrix"));
+    protected void updatePerception() {  
+        AgentID BellatrixID = new AgentID("Bellatrix");
+        this.sendMessage(ACLMessage.QUERY_REF, "", BellatrixID);
         
          try { 
             ACLMessage result= getMsg();
-            //TODO: Check if is a inform of German
-            if(result.getPerformativeInt() == ACLMessage.INFORM)
+            if(result.getSender()!=BellatrixID)
+                getAlemanPerception(result);
+            else if(result.getPerformativeInt() == ACLMessage.INFORM)
                 sensorsParser(result.getContent());
-            
+            else{
+                LOGGER.Error("Mensaje inesperado:");
+                LOGGER.printACLMessage(result);
+            }
+               
         } catch (InterruptedException ex) {
             java.util.logging.Logger.getLogger(Agent.class.getName()).log(Level.SEVERE, null, ex);
         }
