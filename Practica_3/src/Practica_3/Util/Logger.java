@@ -7,6 +7,7 @@ package Practica_3.Util;
 
 import Practica_3.Main.Agent;
 import Practica_3.Main.Bureaucratic;
+import es.upv.dsic.gti_ia.core.ACLMessage;
 
 /**
  *
@@ -25,11 +26,30 @@ public class Logger {
     
     private String header(){return "> "+agent_name+":";}
     
-    public void Info(String msg){
-        System.out.println(header()+msg);
+    public void Error(String msg,Object... args){
+        System.err.println(header()+ String.format(msg, args));
     }
     
     public void Info(String msg,Object... args){
         System.out.println(header()+ String.format(msg, args));
+    }
+    
+    public void printACLMessage(ACLMessage msg){
+        String performative = msg.getPerformative();
+        String content= msg.getContent();
+        String conversationId = msg.getConversationId();
+        String sender = msg.getSender().getLocalName();
+        String reciver = msg.getReceiver().getLocalName();
+        switch(msg.getPerformativeInt())
+        {
+            case ACLMessage.REFUSE:
+            case ACLMessage.FAILURE:
+            case ACLMessage.NOT_UNDERSTOOD:
+               Error("[\"%s\" -> \"%s\"] %s %s:CONVERSATION-ID %s"
+                       ,sender,reciver,performative,content,conversationId);    
+            default:
+               Info("[\"%s\" -> \"%s\"] %s %s:CONVERSATION-ID %s"
+                       ,sender,reciver,performative,content,conversationId);    
+        }
     }
 }

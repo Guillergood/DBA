@@ -49,6 +49,7 @@ public abstract class Agent extends SuperAgent {
     private Status agentStatus;
     private AgentID inReplyTo;
     private String conversationId;
+    private AgentID bureaucraticID;
     
     // Map parameters
     protected Matrix<Integer> MAP_HEIGHT;
@@ -78,9 +79,10 @@ public abstract class Agent extends SuperAgent {
      * @param id The agent ID
      * @param type The agent type (hawk, sparrow, fly or rescue)
      * @param f_limit The fuel limit of this unit
-     * @param height
-     * @param visibility
-     * @param range
+     * @param height The max height
+     * @param visibility The visibility of mini gonio sensor
+     * @param range The range of infrared sensor
+     * @param debug
      * @throws java.lang.Exception
      */
     protected Agent(String id, AgentType type, float f_limit, int height, int visibility, int range, boolean debug) throws Exception{  
@@ -92,6 +94,7 @@ public abstract class Agent extends SuperAgent {
         VISIBILITY = visibility;
         RANGE = range;
         DEBUG = debug;
+        infrared = new Matrix<>(RANGE,RANGE,Integer.class);
     }
 
     /**
@@ -128,27 +131,21 @@ public abstract class Agent extends SuperAgent {
     
     /**
      * @author Guillermo Bueno
+     * @author Bruno García Trípoli
      * Updates the agent perception at demand
      */
-    protected void updatePerception() {
-        ACLMessage outbox = new ACLMessage(); 
-        outbox.setSender(this.getAid());
-        outbox.setReceiver(new AgentID("Bellatrix"));
-        outbox.setPerformative(ACLMessage.getPerformative(ACLMessage.QUERY_REF));
-        outbox.setContent("");
-        outbox.setReplyTo(inReplyTo);
-        outbox.setConversationId(conversationId);
-        this.send(outbox);
+    protected void updatePerception() {        
+        this.sendMessage(ACLMessage.QUERY_REF, "", new AgentID("Bellatrix"));
         
-        try {
-            getMsg();
-        } catch (Exception e) {
-            if(DEBUG){
-                System.out.println(this.toString()+ " excepcion en el updatePerception");
-            }
-            e.printStackTrace();
+         try { 
+            ACLMessage result= getMsg();
+            //TODO: Check if is a inform of German
+            if(result.getPerformativeInt() == ACLMessage.INFORM)
+                sensorsParser(result.getContent());
+            
+        } catch (InterruptedException ex) {
+            java.util.logging.Logger.getLogger(Agent.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
     }
     
     private void initializeMap(JsonObject jObject) throws InterruptedException{        
@@ -156,7 +153,7 @@ public abstract class Agent extends SuperAgent {
         int dimy = jObject.get("dimy").asInt();
         JsonArray json_array = jObject.get("map").asArray();
         
-        MAP_HEIGHT = new Matrix<Integer>(dimx,dimy,Integer.class);
+        MAP_HEIGHT = new Matrix<>(dimx,dimy,Integer.class);
         MAP_HEIGHT.foreach((x,y,v)->json_array.get(x+y*dimx).asInt());
     }
     
@@ -164,6 +161,13 @@ public abstract class Agent extends SuperAgent {
         throw new UnsupportedOperationException("Guille pa ti");
     }
     
+    /**
+     * TODO
+     * @param x
+     * @param y
+     * @return
+     * @throws InterruptedException 
+     */
     private boolean checkIn(int x,int y) throws InterruptedException{
         JsonObject jsonMsg = new JsonObject();
         jsonMsg.add("command", Command.CHECK_IN.getJsonValue());
@@ -173,10 +177,9 @@ public abstract class Agent extends SuperAgent {
         
         sendMessage(ACLMessage.REQUEST, jsonMsg.toString(), new AgentID("Bellatrix"));
         
-        ACLMessage result = receiveACLMessage();
-        if( result.getPerformativeInt() != ACLMessage.INFORM)
-            return false;
-        return true;
+        ACLMessage result = receiveACLMessage();        
+        sendMessage(result.getPerformativeInt(),result.getContent(),bureaucraticID);          
+        return result.getPerformativeInt() == ACLMessage.INFORM;
     }
 
     @Override
@@ -184,21 +187,29 @@ public abstract class Agent extends SuperAgent {
         super.execute();
         try {         
             //Step 1: Recibe First INFORM from Bureaucratic
-            ACLMessage subscribeRetMsg = receiveACLMessage();                        
+            ACLMessage subscribeRetMsg = getMsg();                       
             JsonObject jObject = Json.parse(subscribeRetMsg.getContent()).asObject();
             session = jObject.get("session").asString();
             conversationId = subscribeRetMsg.getConversationId();
+            bureaucraticID = subscribeRetMsg.getSender();
             //Step 1.2: Initialize Map
             initializeMap(jObject);
             
             {//Step 2: Check In
+                /**
+                 * Check In Method:
+                 * 1: send msg {command=checkin}
+                 * 2: get result
+                 * 3: send result to Bureaucratic
+                 * 4: return if result is valid. If not Bureaucratic will send a msg with new coords.
+                 */
                 int x,y;
                 do{
-                    String msg_bureaucratic_checkIn = getMsg();
+                    String msg_bureaucratic_checkIn = getMsg().getContent();
                     JsonObject perceptionObject = Json.parse(msg_bureaucratic_checkIn).asObject();
                     x = perceptionObject.get("x").asInt();
                     y = perceptionObject.get("y").asInt();
-                }while(checkIn(x,y));
+                }while(checkIn(x,y));                
             }
             //Step 3: Loop
             do{
@@ -215,6 +226,20 @@ public abstract class Agent extends SuperAgent {
             java.util.logging.Logger.getLogger(Agent.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
+    
+    @Override
+    protected void sendMessage(Integer performative, String content, AgentID receiver){
+        ACLMessage outbox = new ACLMessage();
+        outbox.setSender(this.getAid());
+        outbox.addReceiver(receiver);
+        outbox.setPerformative(performative);
+        outbox.setContent(content);
+        if(DEBUG)
+            LOGGER.printACLMessage(outbox);
+        //super.sendMessage(performative, content, receiver);
+        this.send(outbox);
+    }
+    
     /**
      * <p> Send a message to the controller. </p>     
      * @author Guillermo Bueno
@@ -229,6 +254,8 @@ public abstract class Agent extends SuperAgent {
         outbox.setPerformative(performative);
         outbox.addReceiver(new AgentID(recvId));
         outbox.setContent(content);
+        if(DEBUG)
+            LOGGER.printACLMessage(outbox);
         this.send(outbox);
     }
     
@@ -248,9 +275,12 @@ public abstract class Agent extends SuperAgent {
         outbox.addReceiver(new AgentID(recvId));
         outbox.setInReplyTo(replyTo);
         outbox.setContent(content);
+        if(DEBUG)
+            LOGGER.printACLMessage(outbox);
         this.send(outbox);
        
     }
+    
     /**
      * <p> Send a message to the controller. </p>     
      * @author Guillermo Bueno
@@ -270,99 +300,25 @@ public abstract class Agent extends SuperAgent {
         outbox.setContent(content);
         if(convID != null)
             outbox.setConversationId(convID);
+        if(DEBUG)
+            LOGGER.printACLMessage(outbox);
         this.send(outbox);
     }
     
     /**
      * <p> Get a message from controller and return the content. </p>     
      * @author Guillermo Bueno
+     * @author Bruno García Trípoli
      * @throws InterruptedException
      * @return the content of message as String.
      */
-    private void getMsg() throws InterruptedException{
-        ACLMessage acl_msg;
-        acl_msg = receiveACLMessage();
+    private ACLMessage getMsg() throws InterruptedException{
+        ACLMessage acl_msg = receiveACLMessage();        
         
-        if(DEBUG){
-            System.out.println(toString() + " recibio -> " 
-                    + acl_msg.getPerformative() + " " 
-                    + acl_msg.getContent());
-        } 
+        if(DEBUG)
+            LOGGER.printACLMessage(acl_msg);
         
-        String contenido = acl_msg.getContent();
-
-        switch(acl_msg.getPerformativeInt()){
-            // ESTA PARTE ESTA HECHA PARA QUE EL AGENTE RECIBA PETICION DEL
-            // BUREAUCRATIC
-            case ACLMessage.REQUEST:
-                parseFirstMessage(contenido);
-                break;
-            /* MENSAJES DEL CONTROLADOR, PUEDE SER:
-                - PERCEPCION.
-                (EL NUMERO DE ELEMENTOS EN EL JSON ES 1: result:{...}).
-                - INFORMACION DEL REQUEST. 
-                (EL NUMERO DE ELEMENTOS EN EL JSON ES 1: result:{ok}).
-                
-                - QUE SE NOTIFIQUE ALEMAN DESDE NUESTROS DRONES. 
-                (EL NUMERO DE ELEMENTOS EN EL JSON ES 2: result e id).
-                
-                - TRAZA DE EJECUCIÓN (PREDECIDA POR UN AGREE)
-                
-            */
-            case ACLMessage.INFORM:
-                if(acl_msg.getSender().getLocalName().equalsIgnoreCase("Bellatrix")){
-                    int numberElements = numberElementsInContentMessage(contenido);
-                    
-                    if(numberElements > 1){
-                        if(numberElements == 2){
-                            //GERMAN SAVED
-                        }
-                        else if (numberElements == 5){
-                            //RESPUESTA DEL CHECKIN
-                        }
-                    }
-                    else{
-                        if(!emptyContentMessage(contenido)){
-                            sensorsParser(contenido);
-                        }
-                    }
-                }
-                else{
-                    germanFound(contenido);
-                }
-                
-                
-                break;
-            // SOLO SE RECIBE CUANDO SE HACE UN CANCEL
-                //***************************//
-            // Y CUANDO EL AGENTE RECIBE LAS COORDENADAS DEL BUREAUCRATIC
-            // PARA INDICARLE QUE TODO ESTA CORRECTO.
-            case ACLMessage.AGREE:
-                break;
-            /* MENSAJES DE ERROR:
-                
-                NOTA: SUELE TENER UN CAMPO DETAILS, CON UNA RAZON DE EL ERROR.
-                HAY QUE JUGAR CON EL REPLY-WITH Y EL SENDER
-                AgentID sender = acl_msg.getSender();
-                String replyWith = acl_msg.getReplyWith();
-            */
-            case ACLMessage.NOT_UNDERSTOOD:
-            case ACLMessage.FAILURE:
-            case ACLMessage.REFUSE:
-                break;
-                          
-            default:
-                throw new UnsupportedOperationException("PERFORMATIVA NO ACEPTADA: " 
-                        + acl_msg.getPerformative());
-        }
-        
-        
-   
-        
-        
-         
-        
-         
+        return acl_msg;
     }
     /**
      * Checks if the message sent has empty content
@@ -541,66 +497,44 @@ public abstract class Agent extends SuperAgent {
                          ((pointA.z)-(pointB.z))*((pointA.z)-(pointB.z)));
     }
     
-    
     private void sensorsParser(String source){        
         JsonObject perceptionObject;
         perceptionObject = Json.parse(source).asObject();
         JsonObject object = perceptionObject.get("result").asObject();
         
-        //System.out.println("\nperceptionObject: " + perceptionObject);
-        //System.out.println("\nobject: " + object);
+        if(object.get("gps") != null)           
+            gps.set(object.get("gps").asObject().get("x").asInt(),object.get("gps").asObject().get("y").asInt(),object.get("gps").asObject().get("z").asInt());                    
         
-        if(object.get("gps") != null){
-            //System.out.println("\nGPS cogido");
-            gps.set(object.get("gps").asObject().get("x").asInt(),object.get("gps").asObject().get("y").asInt(),object.get("gps").asObject().get("z").asInt());
-            //System.out.println("\nGPS es: "+ gps.toString());
-        }
-        
-        if(object.get("fuel") != null){
-            //System.out.println("\nFUEL cogido");
+        if(object.get("fuel") != null)            
             fuel = object.get("fuel").asDouble();
-            //System.out.println("\nFUEL es: "+ fuel);
-        }
         
         if(object.get("infrared") != null){
-            //System.out.println("\nINFRARED cogido");
-            JsonArray arrayInfrared = object.get("infrared").asArray();
+            JsonArray arrayInfrared = object.get("infrared").asArray();  
             
             /*
                 Anotación:
                 Infrared siempre da la esquina noreste del dron(el cual no
                 tiene orientacion, siempre mira al norte).
                 La información se da en filas.
-            */
-            
+            */            
             infrared.foreach((x,y,v)-> arrayInfrared.get(x+y*RANGE).asInt());
-            
-            
-            //System.out.println("\nINFRARED es: "+ torescue );
         }
-        if(object.get("torescue") != null){
-            //System.out.println("\nTORESCUE cogido");
+        if(object.get("torescue") != null)
             to_rescue = object.get("torescue").asInt();
+        
+        if(object.get("status") != null)
+            status = object.get("status").asString().equals("operative");
             
-            //System.out.println("\nTORESCUE es: "+ torescue );
-        }
-        if(object.get("status") != null){
-            //System.out.println("\nSTATUS cogido");
-            status = object.get("status").asString();
-            
-            //System.out.println("\nSTATUS es: "+ status );
-        }
-        if(object.get("goal") != null){
+        if(object.get("goal") != null)
             goal = object.get("goal").asBoolean();
-        }
-        if(object.get("energy") != null){
-            //System.out.println("\nENERGY cogido");
+        
+        /*
+        if(object.get("energy") != null)
             energy = object.get("energy").asDouble();
-            //System.out.println("\nENERGY es: "+ energy );
-        }
-        if(object.get("cancel") != null){
-            cancel = object.get("cancel").asBoolean();
-        }
+        
+        if(object.get("cancel") != null)
+            cancel = object.get("cancel").asBoolean();        
+        */
         if(object.get("gonio") != null ){
             JsonObject gonioObject = object.get("gonio").asObject();
             Float key = gonioObject.get("distance").asFloat();
@@ -609,9 +543,6 @@ public abstract class Agent extends SuperAgent {
         } 
     }
     
-    
-    
-
     /**
      * @author Bruno García Trípoli
      * 
@@ -638,7 +569,6 @@ public abstract class Agent extends SuperAgent {
                     map_explored.ranged_foreach((int)agent.getX(), (int)agent.getZ(), 41,operator);                    
                     break;
                 default:
-                    continue;
             }            
         }
     }
@@ -651,9 +581,6 @@ public abstract class Agent extends SuperAgent {
     // -----------------------
     //ENUMS
 
-
-   
-    
     public enum Status{
         IDLE, EXPLORING, EXPLORING_PLACE, GOING_RESCUE, GOING_HOME;
     }
@@ -662,10 +589,8 @@ public abstract class Agent extends SuperAgent {
         RESCUE("rescue"), FLY("fly"), SPARROW("sparrow"), HAWK("hawk");
 
         public final String display_name;
-        private static AgentType[] VALUES = values();
-        private static final Map<String,AgentType> NAME_LOOKUP = Arrays.stream(VALUES).collect(Collectors.toMap(AgentType::getName, (agentType) -> {
-           return agentType;
-        }));
+        private static final AgentType[] VALUES = values();
+        private static final Map<String,AgentType> NAME_LOOKUP = Arrays.stream(VALUES).collect(Collectors.toMap(AgentType::getName, (agentType) -> agentType));
 
         AgentType(String display_name){
             this.display_name = display_name;
