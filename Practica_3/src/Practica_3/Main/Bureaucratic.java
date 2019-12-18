@@ -82,8 +82,35 @@ public class Bureaucratic extends SuperAgent{
     public void checkInAgents(){
         throw new UnsupportedOperationException("TODO");
     }
-    public void waitStop(){
-        throw new UnsupportedOperationException("TODO");
+    public void waitStop() throws InterruptedException{
+        ArrayList<AgentID> agentes = new ArrayList<>();
+        boolean trash;
+        int stopCounter = 0;
+        JsonObject perceptionObject;
+        while(stopCounter < 4){
+            trash=false;
+            ACLMessage acl_msg = receiveACLMessage();
+            if(DEBUG)
+                LOGGER.printACLMessage(acl_msg);
+            
+            if(acl_msg.getPerformativeInt() == ACLMessage.REQUEST){
+                perceptionObject = Json.parse(acl_msg.getContent()).asObject();
+                String object = perceptionObject.get("command").asString();
+                
+                if(object.equals("stop")){
+                    
+                    for(int i =0;i<agentes.size();i++){
+                        if(acl_msg.getReceiver() == agentes.get(i)){
+                            trash=true;
+                        }
+                    }
+                    if(!trash){
+                        agentes.add(acl_msg.getReceiver());
+                        stopCounter++;
+                    }
+                }
+            } 
+        }
     }
     
     @Override
