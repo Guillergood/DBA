@@ -673,4 +673,50 @@ public abstract class Agent extends SuperAgent {
         }
     }   
     
+    
+    
+    /*
+    /**
+     * <p> Send a message to the controller. </p>     
+     * @author Guillermo Bueno
+     * @param recvId is the receiver id
+     * @param performative is the variable as aspected
+     * @param content is the content of the message
+     * @param replyTo is to whom the message was sent
+     * @param convID is the conversation ID
+     *//*
+    public void sendMessage(String recvId, String performative, String content, String replyTo, String convID) {
+        ACLMessage outbox = new ACLMessage(); 
+        outbox.setSender(this.getAid());
+        outbox.setReceiver(new AgentID("Bellatrix"));
+        outbox.setPerformative(performative);
+        outbox.addReceiver(new AgentID(recvId));
+        outbox.setInReplyTo(replyTo);
+        outbox.setContent(content);
+        if(convID != null)
+            outbox.setConversationId(convID);
+        if(DEBUG)
+            LOGGER.printACLMessage(outbox);
+        this.send(outbox);
+    }
+    /**
+   * <p> Send a message to the controller. </p>     
+   * @author Guillermo Bueno
+   * @param recvId is the receiver id
+   * @param performative is the variable as aspected
+   * @param content is the content of the message
+   *//*
+  public void sendMessage(String recvId, String performative, String content) {
+      ACLMessage outbox = new ACLMessage(); 
+      outbox.setSender(this.getAid());
+      outbox.setReceiver(new AgentID("Bellatrix"));
+      outbox.setPerformative(performative);
+      outbox.addReceiver(new AgentID(recvId));
+      outbox.setContent(content);
+      if(DEBUG)
+          LOGGER.printACLMessage(outbox);
+      this.send(outbox);
+  }
+    */
+    
 }
