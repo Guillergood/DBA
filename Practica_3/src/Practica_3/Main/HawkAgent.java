@@ -71,35 +71,36 @@ public class HawkAgent extends Agent{
                 }
                 // If global fuel warning, go home
                 else if(fuelRemaining <= 1.5 * h(gps, init_pos)) {
+                    plan = search(gps,init_pos);
                     agentStatus = Status.GOING_HOME;
                 }
                 // Else, move to the next cell in the plan
                 else {
                     command = move(place);
                 }
-
-
             }
-            // MODE: IDLE
-            else if(agentStatus == Status.IDLE) {
-                // If the hawk is not at max height, plan to ascend
-                if(gps.z != MAX_HEIGHT) {
-                    plan = search(gps, new Vec3d(gps.x, gps.y, MAX_HEIGHT));
-                }
-                // If it is already at max height, plan to bounce
-                else {
-                    plan = search(gps, bounce());
-                }
+            // MODE: GOING_HOME
+            else if(agentStatus == Status.GOING_HOME) {
+                // Come back home directly
+                command = move(place);
             }
-          
+        }
+        // MODE: IDLE
+        else {
+            // If the hawk is not at max height, plan to ascend
+            if(gps.z != MAX_HEIGHT) {
+                plan = search(gps, new Vec3d(gps.x, gps.y, MAX_HEIGHT));
+            }
+            // If it is already at max height, plan to bounce
+            else {
+                plan = search(gps, bounce());
+            }
+            
+            // Go explore
+            agentStatus = Status.EXPLORING;
         }
 
-        throw new UnsupportedOperationException("Paluego");
-    }
-    
-    private boolean detectBorder() {
-        return (gps.x <= RANGE || gps.x >= map_explored.getColsNum() - RANGE ||
-                gps.y <= RANGE || gps.y >= map_explored.getRowsNum() - RANGE);
+        return command;
     }
     
     /**
@@ -135,7 +136,7 @@ public class HawkAgent extends Agent{
     
     // Calculates the next command to reach an adjacent position
     private Direction move(Vec3d pos) {
-        Direction dir;
+        Direction dir = null;
         
         // MoveN
         if(gps.x == pos.x && gps.y > pos.y && gps.z == pos.z)
@@ -167,6 +168,8 @@ public class HawkAgent extends Agent{
         // MoveDW
         else if(gps.x == pos.x && gps.y == pos.y && gps.z > pos.z)
             dir = Direction.DOWN;
+        
+        return dir;
     }
     
     // No sé si devolver un booleano o la posición del alemán, mañana vemos
