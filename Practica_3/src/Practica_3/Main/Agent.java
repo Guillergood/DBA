@@ -227,10 +227,10 @@ public abstract class Agent extends SuperAgent {
         jsonMsg.add("x", x);
         jsonMsg.add("y", y);   
         
-        sendMessage(ACLMessage.REQUEST, jsonMsg.toString(), new AgentID("Bellatrix"));
+        sendMessage(ACLMessage.REQUEST, jsonMsg.toString(), new AgentID("Bellatrix"),conversationId);
         
         ACLMessage result = receiveACLMessage();        
-        sendMessage(result.getPerformativeInt(),result.getContent(),bureaucraticID);          
+        sendMessage(result.getPerformativeInt(),result.getContent(),bureaucraticID,conversationId);          
         return result.getPerformativeInt() == ACLMessage.INFORM;
     }
 
@@ -272,90 +272,35 @@ public abstract class Agent extends SuperAgent {
             
             //Step 4: Exit
             performMovement(Command.STOP);
-            getTrace();
+            try {
+                getTrace();
+            } catch (IOException ex) {
+                java.util.logging.Logger.getLogger(Agent.class.getName()).log(Level.SEVERE, null, ex);
+            }
             
         } catch (InterruptedException ex) {
             java.util.logging.Logger.getLogger(Agent.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
     
-    @Override
-    protected void sendMessage(Integer performative, String content, AgentID receiver){
+    
+    
+    protected void sendMessage(Integer performative, String content, AgentID receiver,String convID){
         ACLMessage outbox = new ACLMessage();
         outbox.setSender(this.getAid());
         outbox.addReceiver(receiver);
         outbox.setPerformative(performative);
         outbox.setContent(content);
+        outbox.setConversationId(convID);
         if(DEBUG)
             LOGGER.printACLMessage(outbox);
         //super.sendMessage(performative, content, receiver);
         this.send(outbox);
     }
+  
+   
     
-    /**
-     * <p> Send a message to the controller. </p>     
-     * @author Guillermo Bueno
-     * @param recvId is the receiver id
-     * @param performative is the variable as aspected
-     * @param content is the content of the message
-     */
-    public void sendMessage(String recvId, String performative, String content) {
-        ACLMessage outbox = new ACLMessage(); 
-        outbox.setSender(this.getAid());
-        outbox.setReceiver(new AgentID("Bellatrix"));
-        outbox.setPerformative(performative);
-        outbox.addReceiver(new AgentID(recvId));
-        outbox.setContent(content);
-        if(DEBUG)
-            LOGGER.printACLMessage(outbox);
-        this.send(outbox);
-    }
     
-      /**
-     * <p> Send a message to the controller. </p>     
-     * @author Guillermo Bueno
-     * @param recvId is the receiver id
-     * @param performative is the variable as aspected
-     * @param content is the content of the message
-     * @param replyTo is to whom the message was sent
-     */
-    public void sendMessage(String recvId, String performative, String content, String replyTo) {
-        ACLMessage outbox = new ACLMessage(); 
-        outbox.setSender(this.getAid());
-        outbox.setReceiver(new AgentID("Bellatrix"));
-        outbox.setPerformative(performative);
-        outbox.addReceiver(new AgentID(recvId));
-        outbox.setInReplyTo(replyTo);
-        outbox.setContent(content);
-        if(DEBUG)
-            LOGGER.printACLMessage(outbox);
-        this.send(outbox);
-       
-    }
-    
-    /**
-     * <p> Send a message to the controller. </p>     
-     * @author Guillermo Bueno
-     * @param recvId is the receiver id
-     * @param performative is the variable as aspected
-     * @param content is the content of the message
-     * @param replyTo is to whom the message was sent
-     * @param convID is the conversation ID
-     */
-    public void sendMessage(String recvId, String performative, String content, String replyTo, String convID) {
-        ACLMessage outbox = new ACLMessage(); 
-        outbox.setSender(this.getAid());
-        outbox.setReceiver(new AgentID("Bellatrix"));
-        outbox.setPerformative(performative);
-        outbox.addReceiver(new AgentID(recvId));
-        outbox.setInReplyTo(replyTo);
-        outbox.setContent(content);
-        if(convID != null)
-            outbox.setConversationId(convID);
-        if(DEBUG)
-            LOGGER.printACLMessage(outbox);
-        this.send(outbox);
-    }
     
     /**
      * <p> Get a message from controller and return the content. </p>     
