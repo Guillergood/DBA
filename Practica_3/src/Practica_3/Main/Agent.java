@@ -170,7 +170,15 @@ public abstract class Agent extends SuperAgent {
         JsonArray json_array = jObject.get("map").asArray();
         
         MAP_HEIGHT = new Matrix<>(dimx,dimy,Integer.class);
-        MAP_HEIGHT.foreach((x,y,v)->json_array.get(x+y*dimx).asInt());
+        //MAP_HEIGHT.foreach((x,y,v)->json_array.get(x+y*dimx).asInt());
+        int z = 0;
+        
+        for(int k = 0; k < dimy && z < json_array.size(); ++k)
+            for(int i = 0; i < dimx && z < json_array.size(); ++i, ++z)
+                MAP_HEIGHT.set(i, k, json_array.get(z).asInt());
+        
+            
+        
     }
     
     private void getTrace(){
