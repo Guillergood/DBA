@@ -224,7 +224,7 @@ public abstract class Agent extends SuperAgent {
         JsonObject jsonMsg = new JsonObject();
         jsonMsg.add("command", Command.CHECK_IN.getJsonValue());
         jsonMsg.add("session", session);
-        jsonMsg.add("rol", "rescue");
+        jsonMsg.add("rol", getType());
         jsonMsg.add("x", x);
         jsonMsg.add("y", y);   
         
@@ -591,6 +591,10 @@ public abstract class Agent extends SuperAgent {
     public static boolean existAgent(String name){
         
         return false;
+    }
+
+    private String getType() {
+        return agent_type.getName();
     }
     
     // -----------------------
