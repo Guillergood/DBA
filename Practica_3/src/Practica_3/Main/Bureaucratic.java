@@ -64,6 +64,8 @@ public class Bureaucratic extends SuperAgent{
     }
 
     public ACLMessage suscribe(){
+        
+        
         ACLMessage result = null;
         do{
             JsonObject jsonMsg = new JsonObject();
@@ -108,7 +110,7 @@ public class Bureaucratic extends SuperAgent{
         for(Agent agent : agents){
             LOGGER.Info("CheckInAgents: %s", agent.getAid().getLocalName());
             Executors.newSingleThreadExecutor().submit(()->agent.execute());
-            ACLMessage recieveACLMessage = null;
+            ACLMessage receiveACLMessage = null;
             result.setReceiver(agent.getAid());
             result.setSender(this.getAid());
             //Send suscribe
@@ -121,12 +123,12 @@ public class Bureaucratic extends SuperAgent{
                 this.sendMessage(ACLMessage.REQUEST, jsonObject.toString(), agent.getAid());
                 
                 try {
-                    recieveACLMessage = getMsg();
+                    receiveACLMessage = getMsg();
                 } catch (InterruptedException ex) {
                     LOGGER.Error("PETO EN EL CHECKINAGENTS DE BUREAUCRATIC");
                 }
                 //TODO cambiar si falla
-            }while(recieveACLMessage.getPerformativeInt() != ACLMessage.INFORM);
+            }while(receiveACLMessage.getPerformativeInt() != ACLMessage.INFORM);
 
             
             x=+1;

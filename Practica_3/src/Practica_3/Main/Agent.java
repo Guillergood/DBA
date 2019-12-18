@@ -224,6 +224,7 @@ public abstract class Agent extends SuperAgent {
         JsonObject jsonMsg = new JsonObject();
         jsonMsg.add("command", Command.CHECK_IN.getJsonValue());
         jsonMsg.add("session", session);
+        jsonMsg.add("rol", "rescue");
         jsonMsg.add("x", x);
         jsonMsg.add("y", y);   
         
@@ -247,22 +248,22 @@ public abstract class Agent extends SuperAgent {
             //Step 1.2: Initialize Map
             initializeMap(jObject);
             
-            {//Step 2: Check In
-                /**
-                 * Check In Method:
-                 * 1: send msg {command=checkin}
-                 * 2: get result
-                 * 3: send result to Bureaucratic
-                 * 4: return if result is valid. If not Bureaucratic will send a msg with new coords.
-                 */
-                int x,y;
-                do{
-                    String msg_bureaucratic_checkIn = getMsg().getContent();
-                    JsonObject perceptionObject = Json.parse(msg_bureaucratic_checkIn).asObject();
-                    x = perceptionObject.get("x").asInt();
-                    y = perceptionObject.get("y").asInt();
-                }while(checkIn(x,y));                
-            }
+            //Step 2: Check In
+             /**
+             * Check In Method:
+             * 1: send msg {command=checkin}
+             * 2: get result
+             * 3: send result to Bureaucratic
+             * 4: return if result is valid. If not Bureaucratic will send a msg with new coords.
+             */
+            int x,y;
+            do{
+                String msg_bureaucratic_checkIn = getMsg().getContent();
+                JsonObject perceptionObject = Json.parse(msg_bureaucratic_checkIn).asObject();
+                x = perceptionObject.get("x").asInt();
+                y = perceptionObject.get("y").asInt();
+            }while(checkIn(x,y));
+            
             //Step 3: Loop
             do{
                 updatePerception();
