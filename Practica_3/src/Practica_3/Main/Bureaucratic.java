@@ -12,9 +12,11 @@ import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import com.hp.hpl.jena.util.iterator.Map1;
+import edu.emory.mathcs.backport.java.util.Arrays;
 import es.upv.dsic.gti_ia.core.ACLMessage;
 import es.upv.dsic.gti_ia.core.AgentID;
 import java.util.ArrayList;
+import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.stream.Stream;
 import javafx.util.Pair;
@@ -25,7 +27,7 @@ import javafx.util.Pair;
  * @author Bruno García Trípoli
  */
 public class Bureaucratic extends SuperAgent{
-    public final boolean DEBUG = false;
+    public final boolean DEBUG = true;
     private static Bureaucratic INSTANCE = null;
     private static int zombie_count = 0;
     private final Logger LOGGER;
@@ -50,10 +52,10 @@ public class Bureaucratic extends SuperAgent{
     @Override
     protected void execute() {
         super.execute();
+        System.out.println();
         ACLMessage result = suscribe();
         createAgents();
-        sendSubscribe(result);
-        checkInAgents();
+        checkInAgents(result);
         waitStop();
     }
     
@@ -76,7 +78,12 @@ public class Bureaucratic extends SuperAgent{
 
     public void createAgents(){
         switch(MAP_NAME){
-            case "playground":
+            //case "playground":
+            //case "map1":
+            //case "map2":
+            //case "map3":
+            //case "map4":
+            default:
                 names.add("REGCUE2");
                 names.add("REGCUE1");
                 names.add("ALCON");
@@ -85,81 +92,41 @@ public class Bureaucratic extends SuperAgent{
                 agents[1] = Agent.Factory.create(names.get(1), Agent.AgentType.RESCUE, zombie_count,DEBUG);
                 agents[2] = Agent.Factory.create(names.get(2), Agent.AgentType.HAWK, zombie_count,DEBUG);
                 agents[3] = Agent.Factory.create(names.get(3), Agent.AgentType.RESCUE, zombie_count,DEBUG);
-                break;
-            case "map1":
-                names.add("REGCUE2");
-                names.add("REGCUE1");
-                names.add("ALCON");
-                names.add("REGCUE");
-                agents[0] = Agent.Factory.create(names.get(0), Agent.AgentType.RESCUE, zombie_count,DEBUG);
-                agents[1] = Agent.Factory.create(names.get(1), Agent.AgentType.RESCUE, zombie_count,DEBUG);
-                agents[2] = Agent.Factory.create(names.get(2), Agent.AgentType.HAWK, zombie_count,DEBUG);
-                agents[3] = Agent.Factory.create(names.get(3), Agent.AgentType.RESCUE, zombie_count,DEBUG);
-                break;                
-            case "map2":
-                names.add("MOGCA");
-                names.add("MOGCA_2");
-                names.add("ALCON");
-                names.add("REGCUE");
-                agents[0] = Agent.Factory.create(names.get(0), Agent.AgentType.FLY, zombie_count,DEBUG);
-                agents[1] = Agent.Factory.create(names.get(1), Agent.AgentType.FLY, zombie_count,DEBUG);
-                agents[2] = Agent.Factory.create(names.get(2), Agent.AgentType.HAWK, zombie_count,DEBUG);
-                agents[3] = Agent.Factory.create(names.get(3), Agent.AgentType.RESCUE, zombie_count,DEBUG);
-                break;
-            case "map3":
-                names.add("MOGCA");
-                names.add("MOGCA_2");
-                names.add("ALCON");
-                names.add("REGCUE");
-                agents[0] = Agent.Factory.create(names.get(0), Agent.AgentType.FLY, zombie_count,DEBUG);
-                agents[1] = Agent.Factory.create(names.get(1), Agent.AgentType.FLY, zombie_count,DEBUG);
-                agents[2] = Agent.Factory.create(names.get(2), Agent.AgentType.HAWK, zombie_count,DEBUG);
-                agents[3] = Agent.Factory.create(names.get(3), Agent.AgentType.RESCUE, zombie_count,DEBUG);
-                break;
-            case "map4":
-                names.add("MOGCA");
-                names.add("MOGCA_2");
-                names.add("ALCON");
-                names.add("REGCUE");
-                agents[0] = Agent.Factory.create(names.get(0), Agent.AgentType.FLY, zombie_count,DEBUG);
-                agents[1] = Agent.Factory.create(names.get(1), Agent.AgentType.FLY, zombie_count,DEBUG);
-                agents[2] = Agent.Factory.create(names.get(2), Agent.AgentType.HAWK, zombie_count,DEBUG);
-                agents[3] = Agent.Factory.create(names.get(3), Agent.AgentType.RESCUE, zombie_count,DEBUG);
-                break;             
-        }
+                break;     
+        }        
+        
     }
     
-    public void checkInAgents(){
+    public void checkInAgents(ACLMessage result){
         int x = 0;
         int y = 0;
-        
-        for(int i = 0; i < 4; ++i){
-            JsonObject jsonObject = new JsonObject();
-            ACLMessage acl_msg = new ACLMessage();
-            acl_msg.addReceiver(agents[i].getAid());
-            jsonObject.add("x", x);
-            jsonObject.add("y", y);
-            acl_msg.setContent(jsonObject.toString());
-            
+        LOGGER.Info("CheckInAgents: bandera");
+        for(Agent agent : agents){
+            LOGGER.Info("CheckInAgents: %s", agent.getAid().getLocalName());
+            Executors.newSingleThreadExecutor().submit(()->agent.execute());
             ACLMessage recieveACLMessage = null;
-            try {
-                recieveACLMessage = receiveACLMessage();
-            } catch (InterruptedException ex) {
-                LOGGER.Error("PETO EN EL CHECKINAGENTS DE BUREAUCRATIC");
-            }
+            result.setReceiver(agent.getAid());
+            result.setSender(this.getAid());
+            send(result);
+            do{
+                JsonObject jsonObject = new JsonObject();
+                ACLMessage acl_msg = new ACLMessage();
+                acl_msg.addReceiver(agent.getAid());
+                jsonObject.add("x", x);
+                jsonObject.add("y", y);
+                acl_msg.setContent(jsonObject.toString());
+                
+                try {
+                    recieveACLMessage = getMsg();
+                } catch (InterruptedException ex) {
+                    LOGGER.Error("PETO EN EL CHECKINAGENTS DE BUREAUCRATIC");
+                }
+                //TODO cambiar si falla
+            }while(recieveACLMessage.getPerformativeInt() != ACLMessage.INFORM);
+
             
-            
-            
-            
-            // CAMBIAR ESTO
-            
-            if(recieveACLMessage != null && recieveACLMessage.getPerformativeInt() != ACLMessage.AGREE){
-                i--;
-            }
-           
             x=+1;
         }
-          
         
     }
     public void waitStop(){
@@ -181,55 +148,7 @@ public class Bureaucratic extends SuperAgent{
         
         return acl_msg;
     }
-    
-    private void login() throws InterruptedException{
-        boolean continua = true;
-        while(continua){
-            JsonObject jsonMsg = new JsonObject();
-            jsonMsg.add("map", "playground");
-            jsonMsg.add("user", USER);
-            jsonMsg.add("password", PASSWORD);
-            ACLMessage message = new ACLMessage(ACLMessage.SUBSCRIBE);
-            message.setContent(jsonMsg.toString());
-            send(message);
-
-            ACLMessage checkin = receiveACLMessage();
-            if(checkin.getPerformativeInt() == ACLMessage.INFORM){
-                continua = false;
-                String content = checkin.getContent();
-                String session = parseSession(content);
-                Pair<Integer,Integer> dims = parseDimensions(content);
-                int[][] fullMap;
-                fullMap = parseMap(content, dims.getKey(), dims.getValue());
-                
-                
-                jsonMsg = new JsonObject();
-                jsonMsg.add("session", session);
-                jsonMsg.add("dimx", dims.getKey());
-                jsonMsg.add("dimy", dims.getValue());
-                ACLMessage spreadInformation = new ACLMessage(ACLMessage.INFORM);
-                spreadInformation.setContent(jsonMsg.toString());
-                spreadInformation.setSender(this.getAid());
-                spreadInformation.setReceiver(new AgentID("Bellatrix"));
-                spreadInformation.addReceiver(new AgentID(names.get(0)));
-                spreadInformation.addReceiver(new AgentID(names.get(1)));
-                spreadInformation.addReceiver(new AgentID(names.get(2)));
-                spreadInformation.addReceiver(new AgentID(names.get(3)));
-                spreadInformation.setConversationId(checkin.getConversationId());
-                send(spreadInformation);
-
-            }
-            
-
-         
-
-        }
-
-        
-
-
-    }
-
+   
     public String parseSession(String content){
         JsonObject perceptionObject;
         String session = null;
@@ -286,11 +205,11 @@ public class Bureaucratic extends SuperAgent{
        return mapSize;
     }
 
-    private void sendSubscribe(ACLMessage result) {
-        for(Agent agent: agents){
-            result.addReceiver(agent.getAid());
-        }
-        send(result);
+    @Override
+    public void send(ACLMessage result)
+    {
+        LOGGER.printACLMessage(result);
+        super.send(result);
     }
     
 }
