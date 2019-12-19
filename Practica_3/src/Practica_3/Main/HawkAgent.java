@@ -7,6 +7,7 @@ package Practica_3.Main;
 
 
 
+import Practica_3.Util.Command;
 import Practica_3.Util.Command.Direction;
 import Practica_3.Util.IJsonSerializable;
 import com.sun.javafx.geom.Vec3d;
@@ -30,6 +31,7 @@ public class HawkAgent extends Agent{
     
     /**
      * The way the agent goes
+     * @author Juan Ocaña Valenzuela
      * @return The next action to perform
      */
     @Override
@@ -81,11 +83,19 @@ public class HawkAgent extends Agent{
             }
             // MODE: GOING_HOME
             else if(agentStatus == Status.GOING_HOME) {
-                // Come back home directly
-                command = move(place);
+                if(gps != init_pos) {
+                    // Come back home directly
+                    command = move(place);    
+                }
+                else
+                    agentStatus = Status.IDLE;
+            }
+            // MODE: IDLE
+            else if(agentStatus == Status.IDLE) {
+                command = Command.STOP;
             }
         }
-        // MODE: IDLE
+        // Replan
         else {
             // If the hawk is not at max height, plan to ascend
             if(gps.z != MAX_HEIGHT) {
@@ -105,6 +115,7 @@ public class HawkAgent extends Agent{
     
     /**
      * Picks the next direction to move, "bouncing" in the exploration area
+     * @author Juan Ocaña Valenzuela
      * @return the new objective
      */
     private Vec3d bounce() {
@@ -134,7 +145,12 @@ public class HawkAgent extends Agent{
         return obj;  
     }
     
-    // Calculates the next command to reach an adjacent position
+    /**
+     * Calculates the next command to reach an adjacent position
+     * @author Juan Ocaña Valenzuela
+     * @param pos
+     * @return 
+     */
     private Direction move(Vec3d pos) {
         Direction dir = null;
         
